@@ -325,21 +325,11 @@ def _derive_model_overrides(payload):
     )
     trust_gap = max(0.0, 1.0 - device_trust)
 
-    device_factor = {
-        "smart cane": (1.2, 0.7, 0.8, 0.8),
-        "obstacle sensor": (1.6, 0.8, 0.5, 0.4),
-        "wearable ai navigation": (1.1, 1.5, 1.3, 1.4),
-        "gps guidance": (0.4, 0.6, 1.4, 1.2),
-        "ai scene description": (0.5, 0.7, 0.9, 1.6),
-        "remote visual assistance": (0.7, 0.8, 1.0, 1.5),
-        "indoor landmark navigation": (0.5, 0.3, 0.8, 1.8),
-    }.get(str(device.get("type", "")).strip().lower(), (1.0, 1.0, 1.0, 1.0))
-
-    _set_override(overrides, "CANE_OBSTACLE_PROB", 0.00179 * obstacle_rate * device_factor[0])
+    _set_override(overrides, "CANE_OBSTACLE_PROB", 0.00179 * obstacle_rate)
     _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(small_ground_rate, tactile_factor * 0.35))
     _set_override(overrides, "CANE_WALL_PROB", 0.00507 * obstacle_rate)
     _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * obstacle_rate)
-    _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", 0.00142 * vehicle_factor * traffic_factor * device_factor[1])
+    _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", 0.00142 * vehicle_factor * traffic_factor)
     _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", 0.00574 * vehicle_factor * crossing_factor * traffic_factor)
     _set_override(overrides, "SOUND_HORN_PROB", 0.000167 * traffic_factor * vehicle_factor)
     _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", 0.000251 * traffic_factor * vehicle_factor)
@@ -347,7 +337,7 @@ def _derive_model_overrides(payload):
     _set_override(overrides, "CROSSING_HORN_PROB", 0.00313 * crossing_factor * traffic_factor)
     _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", 0.02402 * crossing_factor * crowd_factor)
 
-    landmark_strength = max(landmark_factor, text_factor * 0.8, entrance_factor * 0.9) * device_factor[3]
+    landmark_strength = max(landmark_factor, text_factor * 0.8, entrance_factor * 0.9)
     _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006 * landmark_strength)
     _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030 * landmark_strength)
     _set_override(overrides, "LANDMARK_DECAY_RATE", {"Weak": 0.70, "Normal": 0.82, "Strong": 0.94}.get(duration.get("landmark_persistence"), 0.82))

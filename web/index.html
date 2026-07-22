@@ -343,50 +343,6 @@
       gap: 10px;
     }
 
-    .device-grid {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .device-card {
-      min-height: 118px;
-      padding: 14px 10px;
-      border-radius: 10px;
-      border: 2px solid transparent;
-      background: #fff;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .device-card.active {
-      border-color: var(--accent);
-      background: #fff5ef;
-    }
-
-    .device-title {
-      font-size: 15px;
-      font-weight: 850;
-      margin-bottom: 5px;
-    }
-
-    .device-icon {
-      font-size: 28px;
-      line-height: 1;
-    }
-
-    .device-desc {
-      display: none;
-      font-size: 12px;
-      color: #666;
-      line-height: 1.35;
-    }
-
     .control-table {
       width: 100%;
       border-collapse: separate;
@@ -702,47 +658,6 @@
           <section id="capability" class="tab-panel active">
             <div class="capability-grid">
               <div>
-                <h2 class="subhead">Device Type</h2>
-                <div class="device-grid">
-                  <div class="device-card active">
-                    <div class="device-icon">⌇</div>
-                    <div class="device-title">Smart Cane</div>
-                    <div class="device-desc">Obstacle detection, tactile feedback, limited route support.</div>
-                  </div>
-                  <div class="device-card">
-                    <div class="device-icon">◉</div>
-                    <div class="device-title">Obstacle Sensor</div>
-                    <div class="device-desc">Short-range obstacle alerts through vibration or beeps.</div>
-                  </div>
-                  <div class="device-card">
-                    <div class="device-icon">▣</div>
-                    <div class="device-title">Wearable AI Navigation</div>
-                    <div class="device-desc">Camera or sensor based guidance with spatial audio.</div>
-                  </div>
-                  <div class="device-card">
-                    <div class="device-icon">●</div>
-                    <div class="device-title">GPS Guidance</div>
-                    <div class="device-desc">Route instructions, turns, distance, and nearby places.</div>
-                  </div>
-                  <div class="device-card">
-                    <div class="device-icon">□</div>
-                    <div class="device-title">AI Scene Description</div>
-                    <div class="device-desc">Object, text, people, and place descriptions.</div>
-                  </div>
-                  <div class="device-card">
-                    <div class="device-icon">☏</div>
-                    <div class="device-title">Remote Visual Assistance</div>
-                    <div class="device-desc">Human-assisted visual interpretation over live video.</div>
-                  </div>
-                  <div class="device-card">
-                    <div class="device-icon">⌂</div>
-                    <div class="device-title">Indoor Landmark Navigation</div>
-                    <div class="device-desc">Room, entrance, floor, station, and indoor node guidance.</div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
                 <h2 class="subhead">Reference Detection</h2>
                 <table class="control-table">
                   <thead>
@@ -952,13 +867,6 @@
       });
     });
 
-    document.querySelectorAll(".device-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        document.querySelectorAll(".device-card").forEach((item) => item.classList.remove("active"));
-        card.classList.add("active");
-      });
-    });
-
     document.querySelectorAll(".number-row button").forEach((button) => {
       button.addEventListener("click", () => {
         const input = document.getElementById(button.dataset.target);
@@ -999,7 +907,6 @@
       const railCards = document.querySelectorAll(".rail .card");
       const scenarioCard = railCards[0];
       const profileCard = railCards[1];
-      const selectedDevice = document.querySelector(".device-card.active .device-title");
       const referenceTable = document.querySelector("#capability .control-table");
       const feedbackTable = document.querySelector("#feedback .control-table");
       const feedbackPanel = document.getElementById("feedback");
@@ -1024,7 +931,6 @@
           goal_point: document.getElementById("goalPoint").value
         },
         device: {
-          type: selectedDevice ? selectedDevice.textContent.trim() : "Smart Cane",
           references: collectTableRows(referenceTable)
         },
         feedback: {
