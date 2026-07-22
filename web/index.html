@@ -1,0 +1,1055 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BVI-SAS Designer Parameter Library</title>
+  <style>
+    :root {
+      --bg: #4f4f4d;
+      --panel: #d7d7d6;
+      --surface: #f3f3f2;
+      --surface-2: #e9e9e8;
+      --line: #c9c9c7;
+      --text: #242424;
+      --muted: #777;
+      --dark: #191919;
+      --accent: #f36d2f;
+      --accent-2: #f89a6d;
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+      --shadow-soft: 0 8px 18px rgba(0, 0, 0, 0.14);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 0 24px 30px;
+    }
+
+    .topbar {
+      margin: 0 -24px 22px;
+      padding: 20px 28px;
+      min-height: 92px;
+      background: linear-gradient(90deg, #202020, #2f2f2f);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      box-shadow: var(--shadow-soft);
+      object-fit: cover;
+      flex: 0 0 auto;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 30px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .brand-subtitle {
+      color: #d7d7d7;
+      margin-top: 2px;
+      font-size: 15px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 410px minmax(880px, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .rail,
+    .workspace {
+      background: #eeeeed;
+      border: 1px solid #d2d2d0;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .workspace {
+      min-height: 760px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .section-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      color: #252525;
+      padding: 2px 2px 14px;
+      border-radius: 0;
+      font-size: 19px;
+      font-weight: 800;
+      margin-bottom: 0;
+      box-shadow: none;
+      text-transform: uppercase;
+    }
+
+    .section-pill .icon {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 14px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .hint {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #9b9b99;
+      color: #777;
+      display: inline-grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 750;
+      color: #4b4b4a;
+      margin-bottom: 6px;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    select,
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      padding: 0 12px;
+      font-size: 15px;
+      font-weight: 650;
+      outline: none;
+    }
+
+    select:focus,
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(243, 109, 47, 0.18);
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: #dededc;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      overflow: hidden;
+      height: 44px;
+    }
+
+    .segmented.two {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .segmented button {
+      border: 0;
+      background: transparent;
+      color: #2d2d2c;
+      font-size: 14px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .segmented button.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+    }
+
+    .number-row {
+      display: grid;
+      grid-template-columns: 48px 1fr 48px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      overflow: hidden;
+      background: #fff;
+      height: 50px;
+    }
+
+    .number-row button,
+    .number-row input {
+      border: 0;
+      border-radius: 0;
+      background: #f8f8f7;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 850;
+      color: #333;
+    }
+
+    .number-row input {
+      background: #fff;
+      font-size: 22px;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+      width: 100%;
+      height: 56px;
+      border: 0;
+      border-radius: 999px;
+      font-size: 18px;
+      font-weight: 850;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .primary-btn {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .secondary-btn {
+      background: #f2f2f1;
+      color: #333;
+      border: 1px solid var(--line);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 12px 12px 0 0;
+      overflow: hidden;
+      margin-bottom: 0;
+    }
+
+    .tab {
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: #efefee;
+      min-height: 70px;
+      font-size: 17px;
+      font-weight: 850;
+      color: #282828;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+
+    .tab:last-child {
+      border-right: 0;
+    }
+
+    .tab.active {
+      background: #fff;
+      box-shadow: inset 0 -4px 0 var(--accent);
+    }
+
+    .content-shell {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-top: 0;
+      border-radius: 0 0 12px 12px;
+      padding: 26px;
+      min-height: 620px;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 22px;
+    }
+
+    .capability-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 22px;
+    }
+
+    .subhead {
+      font-size: 20px;
+      font-weight: 850;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .device-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .device-card {
+      min-height: 118px;
+      padding: 14px 10px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      background: #fff;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .device-card.active {
+      border-color: var(--accent);
+      background: #fff5ef;
+    }
+
+    .device-title {
+      font-size: 15px;
+      font-weight: 850;
+      margin-bottom: 5px;
+    }
+
+    .device-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .device-desc {
+      display: none;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.35;
+    }
+
+    .control-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border-radius: 12px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .control-table th {
+      background: var(--accent-2);
+      color: #303030;
+      text-align: left;
+      padding: 14px;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .control-table td {
+      background: #fff;
+      border-bottom: 1px solid #e6e6e4;
+      padding: 13px 14px;
+      vertical-align: middle;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .control-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      display: inline-block;
+    }
+
+    .switch input {
+      display: none;
+    }
+
+    .slider-switch {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #aaa;
+      border-radius: 999px;
+      transition: 0.18s;
+    }
+
+    .slider-switch::before {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      left: 3px;
+      top: 3px;
+      border-radius: 50%;
+      background: #fff;
+      transition: 0.18s;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+    }
+
+    .switch input:checked + .slider-switch {
+      background: #2f2f2f;
+    }
+
+    .switch input:checked + .slider-switch::before {
+      transform: translateX(24px);
+    }
+
+    .mini-select {
+      height: 34px;
+      font-size: 13px;
+      padding: 0 8px;
+    }
+
+    .range-line {
+      display: grid;
+      grid-template-columns: 150px 1fr 68px;
+      gap: 14px;
+      align-items: center;
+      min-height: 48px;
+      border-bottom: 1px solid #e1e1df;
+    }
+
+    .range-line:last-child {
+      border-bottom: 0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .range-value {
+      text-align: right;
+      font-weight: 850;
+      color: #333;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #dededc;
+      padding: 16px;
+      min-height: 96px;
+    }
+
+    .metric-label {
+      color: #666;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: #252525;
+    }
+
+    .status-note {
+      background: #fff8f2;
+      border: 1px solid #f2c3a7;
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #4a3a31;
+      line-height: 1.45;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+
+    .run-status {
+      display: none;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 9px;
+      background: #fff8f2;
+      border: 1px solid #f2c3a7;
+      color: #4a3a31;
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .run-status.active {
+      display: block;
+    }
+
+    .metric-path {
+      margin-top: 12px;
+      color: #666;
+      font-size: 12px;
+      font-weight: 700;
+      word-break: break-all;
+    }
+
+    @media (max-width: 1180px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-mark" src="assets/bvi-logo.png" alt="BVI-SAS logo" />
+        <div>
+          <h1 class="brand-title">BVI-SAS Designer Parameter Library</h1>
+          <div class="brand-subtitle">Behavioral, Vision & Interaction - Simulation & Analysis Suite</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="rail">
+        <div class="section-pill"><img class="icon" src="assets/simulation-setup.png" alt="" /> Simulation Setup</div>
+
+        <section class="card">
+          <h2 class="card-title">Testing Scenario <span class="hint">?</span></h2>
+          <div class="field">
+            <label for="scenarioType">Scenario Type</label>
+            <select id="scenarioType">
+              <option>Daily commute</option>
+              <option>Campus navigation</option>
+              <option>Street crossing</option>
+              <option>Shopping mall</option>
+              <option>Transit station</option>
+              <option>Hospital or public building</option>
+              <option>Unfamiliar outdoor route</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Traffic Density</label>
+            <div class="segmented">
+              <button>Low</button><button class="active">Medium</button><button>High</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Crowd Density</label>
+            <div class="segmented">
+              <button>Low</button><button class="active">Medium</button><button>High</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Tactile Paving</label>
+            <div class="segmented">
+              <button>None</button><button class="active">Partial</button><button>Continuous</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">User Profile <span class="hint">?</span></h2>
+          <div class="field">
+            <label>Familiarity</label>
+            <div class="segmented two">
+              <button class="active">Familiar</button><button>Unfamiliar</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">Simulation Control <span class="hint">?</span></h2>
+          <div class="field">
+            <label>Monte Carlo Runs</label>
+            <div class="number-row">
+              <button data-step="-1" data-target="runs">−</button>
+              <input id="runs" type="number" value="1" min="1" max="3" />
+              <button data-step="1" data-target="runs">+</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Random Seed</label>
+            <div class="number-row">
+              <button data-step="-1" data-target="seed">−</button>
+              <input id="seed" type="number" value="42" min="1" />
+              <button data-step="1" data-target="seed">+</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="startPoint">Start Point</label>
+            <input id="startPoint" type="text" value="-33.8688, 151.2093" />
+          </div>
+          <div class="field">
+            <label for="goalPoint">Goal Point</label>
+            <input id="goalPoint" type="text" value="-33.8722, 151.2131" />
+          </div>
+          <button id="startSimulation" class="primary-btn">Start Simulation</button>
+          <button class="secondary-btn">Reset Defaults</button>
+          <div id="runStatus" class="run-status" aria-live="polite"></div>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <nav class="tabs" aria-label="Product setting tabs">
+          <button class="tab active" data-tab="capability">Device Capability</button>
+          <button class="tab" data-tab="feedback">Feedback & Timing</button>
+          <button class="tab" data-tab="response">Walking Response</button>
+          <button class="tab" data-tab="cognitive">Cognitive Impact</button>
+        </nav>
+
+        <div class="content-shell">
+          <section id="capability" class="tab-panel active">
+            <div class="capability-grid">
+              <div>
+                <h2 class="subhead">Device Type</h2>
+                <div class="device-grid">
+                  <div class="device-card active">
+                    <div class="device-icon">⌇</div>
+                    <div class="device-title">Smart Cane</div>
+                    <div class="device-desc">Obstacle detection, tactile feedback, limited route support.</div>
+                  </div>
+                  <div class="device-card">
+                    <div class="device-icon">◉</div>
+                    <div class="device-title">Obstacle Sensor</div>
+                    <div class="device-desc">Short-range obstacle alerts through vibration or beeps.</div>
+                  </div>
+                  <div class="device-card">
+                    <div class="device-icon">▣</div>
+                    <div class="device-title">Wearable AI Navigation</div>
+                    <div class="device-desc">Camera or sensor based guidance with spatial audio.</div>
+                  </div>
+                  <div class="device-card">
+                    <div class="device-icon">●</div>
+                    <div class="device-title">GPS Guidance</div>
+                    <div class="device-desc">Route instructions, turns, distance, and nearby places.</div>
+                  </div>
+                  <div class="device-card">
+                    <div class="device-icon">□</div>
+                    <div class="device-title">AI Scene Description</div>
+                    <div class="device-desc">Object, text, people, and place descriptions.</div>
+                  </div>
+                  <div class="device-card">
+                    <div class="device-icon">☏</div>
+                    <div class="device-title">Remote Visual Assistance</div>
+                    <div class="device-desc">Human-assisted visual interpretation over live video.</div>
+                  </div>
+                  <div class="device-card">
+                    <div class="device-icon">⌂</div>
+                    <div class="device-title">Indoor Landmark Navigation</div>
+                    <div class="device-desc">Room, entrance, floor, station, and indoor node guidance.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h2 class="subhead">Reference Detection</h2>
+                <table class="control-table">
+                  <thead>
+                    <tr><th>Reference</th><th>Enabled</th><th>Reliability</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>Obstacle</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>High</option><option>Medium</option><option>Low</option></select></td></tr>
+                    <tr><td>Vehicle approach</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
+                    <tr><td>Crossing</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
+                    <tr><td>Landmark</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>High</option><option>Medium</option><option>Low</option></select></td></tr>
+                    <tr><td>Text or sign</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
+                    <tr><td>People or crowd</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
+                    <tr><td>Building entrance</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Low</option><option>Medium</option><option>High</option></select></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="feedback" class="tab-panel">
+            <div class="panel-grid">
+              <div class="card">
+                <h2 class="subhead">Feedback Modality</h2>
+                <table class="control-table">
+                  <thead><tr><th>Channel</th><th>Enabled</th><th>Intensity</th></tr></thead>
+                  <tbody>
+                    <tr><td>Vibration</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Normal</option><option>Subtle</option><option>Strong</option></select></td></tr>
+                    <tr><td>Beep</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Subtle</option><option>Normal</option><option>Strong</option></select></td></tr>
+                    <tr><td>Speech</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Normal</option><option>Quiet</option><option>Prominent</option></select></td></tr>
+                    <tr><td>Spatial audio</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Normal</option><option>Quiet</option><option>Prominent</option></select></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="card">
+                <h2 class="subhead">Warning Timing</h2>
+                <div class="field">
+                  <label>Activation Mode</label>
+                  <select>
+                    <option>Event-triggered</option>
+                    <option>Always on</option>
+                    <option>Manual request</option>
+                    <option>Periodic update</option>
+                  </select>
+                </div>
+                <div class="range-line">
+                  <label>Warning Frequency</label>
+                  <input type="range" min="1" max="3" value="2">
+                  <div class="range-value">Med.</div>
+                </div>
+                <div class="range-line">
+                  <label>Alert Interval</label>
+                  <input type="range" min="3" max="12" value="6">
+                  <div class="range-value">6s</div>
+                </div>
+                <div class="range-line">
+                  <label>Critical Override</label>
+                  <label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label>
+                  <div class="range-value">On</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="response" class="tab-panel">
+            <div class="panel-grid">
+              <div class="card">
+                <h2 class="subhead">Walking Response</h2>
+                <div class="field">
+                  <label>Default Obstacle Response</label>
+                  <select>
+                    <option>Stop and probe</option>
+                    <option>Slow down</option>
+                    <option>Detour</option>
+                    <option>Continue</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>High-risk Crossing Response</label>
+                  <select>
+                    <option>Wait</option>
+                    <option>Stop and probe</option>
+                    <option>Proceed carefully</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Require Cane Confirmation</label>
+                  <div class="segmented two">
+                    <button class="active">Yes</button><button>No</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Recovery After Alert</label>
+                  <div class="segmented">
+                    <button>Fast</button><button class="active">Normal</button><button>Slow</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <h2 class="subhead">Reference Duration</h2>
+                <div class="field">
+                  <label>Alert Duration</label>
+                  <div class="segmented">
+                    <button>Short</button><button class="active">Medium</button><button>Long</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Landmark Persistence</label>
+                  <div class="segmented">
+                    <button>Weak</button><button class="active">Normal</button><button>Strong</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Vehicle Alert Persistence</label>
+                  <div class="segmented">
+                    <button>Short</button><button class="active">Medium</button><button>Long</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Repeated Alert Cooldown</label>
+                  <div class="segmented">
+                    <button>Short</button><button class="active">Medium</button><button>Long</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="cognitive" class="tab-panel">
+            <div class="panel-grid">
+              <div class="card">
+                <h2 class="subhead">Cognitive Impact Controls</h2>
+                <div class="range-line">
+                  <label>Perceived Trust</label>
+                  <input type="range" min="1" max="3" value="2">
+                  <div class="range-value">Med.</div>
+                </div>
+                <div class="range-line">
+                  <label>Information Load</label>
+                  <input type="range" min="1" max="3" value="2">
+                  <div class="range-value">Med.</div>
+                </div>
+                <div class="range-line">
+                  <label>Auditory Interference</label>
+                  <input type="range" min="1" max="3" value="1">
+                  <div class="range-value">Low</div>
+                </div>
+                <div class="range-line">
+                  <label>False Alarm Impact</label>
+                  <input type="range" min="1" max="3" value="2">
+                  <div class="range-value">Med.</div>
+                </div>
+                <div class="range-line">
+                  <label>Missed Alert Risk</label>
+                  <input type="range" min="1" max="3" value="2">
+                  <div class="range-value">Med.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="card" style="margin: 16px 16px 16px;">
+          <h2 class="subhead">Simulation Output Preview <span class="hint">?</span></h2>
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-label">Mean Cognitive Load</div>
+              <div id="metricLoad" class="metric-value">--</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">High-load Episodes</div>
+              <div id="metricHighLoad" class="metric-value">--</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Risk Level</div>
+              <div id="metricRisk" class="metric-value" style="color: var(--accent); font-size: 24px;">--</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Stop-and-probe Count</div>
+              <div id="metricProbe" class="metric-value">--</div>
+            </div>
+          </div>
+          <div id="metricReportPath" class="metric-path"></div>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((item) => item.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
+    });
+
+    document.querySelectorAll(".segmented button").forEach((button) => {
+      button.addEventListener("click", () => {
+        button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+      });
+    });
+
+    document.querySelectorAll(".device-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".device-card").forEach((item) => item.classList.remove("active"));
+        card.classList.add("active");
+      });
+    });
+
+    document.querySelectorAll(".number-row button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const input = document.getElementById(button.dataset.target);
+        const step = Number(button.dataset.step);
+        const min = Number(input.min || 0);
+        const max = input.max ? Number(input.max) : Number.POSITIVE_INFINITY;
+        input.value = Math.min(max, Math.max(min, Number(input.value || 0) + step));
+      });
+    });
+
+    function activeText(container) {
+      const active = container.querySelector(".active");
+      return active ? active.textContent.trim() : "";
+    }
+
+    function collectTableRows(table) {
+      return Array.from(table.querySelectorAll("tbody tr")).map((row) => {
+        const cells = row.querySelectorAll("td");
+        return {
+          name: cells[0].textContent.trim(),
+          enabled: Boolean(row.querySelector("input[type='checkbox']")?.checked),
+          value: row.querySelector("select")?.value || null
+        };
+      });
+    }
+
+    function collectRangeRows(panel) {
+      return Array.from(panel.querySelectorAll(".range-line")).map((row) => {
+        return {
+          name: row.querySelector("label")?.textContent.trim() || "",
+          value: row.querySelector("input[type='range']")?.value || null,
+          enabled: row.querySelector("input[type='checkbox']")?.checked ?? null
+        };
+      });
+    }
+
+    function collectSimulationConfig() {
+      const railCards = document.querySelectorAll(".rail .card");
+      const scenarioCard = railCards[0];
+      const profileCard = railCards[1];
+      const selectedDevice = document.querySelector(".device-card.active .device-title");
+      const referenceTable = document.querySelector("#capability .control-table");
+      const feedbackTable = document.querySelector("#feedback .control-table");
+      const feedbackPanel = document.getElementById("feedback");
+      const responsePanel = document.getElementById("response");
+      const responseCards = responsePanel.querySelectorAll(".card");
+
+      return {
+        scenario: {
+          type: document.getElementById("scenarioType").value,
+          traffic_density: activeText(scenarioCard.querySelectorAll(".segmented")[0]),
+          crowd_density: activeText(scenarioCard.querySelectorAll(".segmented")[1]),
+          tactile_paving: activeText(scenarioCard.querySelectorAll(".segmented")[2])
+        },
+        user_profile: {
+          familiarity: activeText(profileCard.querySelector(".segmented"))
+        },
+        simulation: {
+          runs: Number(document.getElementById("runs").value || 1),
+          seed: Number(document.getElementById("seed").value || 42),
+          start_point: document.getElementById("startPoint").value,
+          goal_point: document.getElementById("goalPoint").value
+        },
+        device: {
+          type: selectedDevice ? selectedDevice.textContent.trim() : "Smart Cane",
+          references: collectTableRows(referenceTable)
+        },
+        feedback: {
+          modalities: collectTableRows(feedbackTable),
+          activation_mode: feedbackPanel.querySelector("select")?.value || "Event-triggered",
+          timing: collectRangeRows(feedbackPanel)
+        },
+        walking_response: {
+          default_obstacle_response: responseCards[0].querySelectorAll("select")[0]?.value || "Stop and probe",
+          high_risk_crossing_response: responseCards[0].querySelectorAll("select")[1]?.value || "Wait",
+          require_cane_confirmation: activeText(responseCards[0].querySelectorAll(".segmented")[0]),
+          recovery_after_alert: activeText(responseCards[0].querySelectorAll(".segmented")[1])
+        },
+        reference_duration: {
+          alert_duration: activeText(responseCards[1].querySelectorAll(".segmented")[0]),
+          landmark_persistence: activeText(responseCards[1].querySelectorAll(".segmented")[1]),
+          vehicle_alert_persistence: activeText(responseCards[1].querySelectorAll(".segmented")[2]),
+          repeated_alert_cooldown: activeText(responseCards[1].querySelectorAll(".segmented")[3])
+        },
+        cognitive_impact: collectRangeRows(document.getElementById("cognitive"))
+      };
+    }
+
+    function setRunStatus(message, isActive = true) {
+      const status = document.getElementById("runStatus");
+      status.textContent = message;
+      status.classList.toggle("active", isActive);
+    }
+
+    function updateMetrics(response) {
+      const result = response.result;
+      document.getElementById("metricLoad").textContent = Number(result.mean_cognitive_load).toFixed(2);
+      document.getElementById("metricHighLoad").textContent = result.high_load_episodes;
+      document.getElementById("metricRisk").textContent = result.risk_level;
+      document.getElementById("metricProbe").textContent = Number(result.stop_probe_count).toFixed(1).replace(".0", "");
+      document.getElementById("metricReportPath").textContent = `Report: ${response.report_path}`;
+    }
+
+    document.getElementById("startSimulation").addEventListener("click", async () => {
+      const button = document.getElementById("startSimulation");
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Running...";
+      setRunStatus("Running the local BVI-SAS simulation. This may take a moment.");
+
+      try {
+        const response = await fetch("/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(collectSimulationConfig())
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || "Simulation failed.");
+        }
+        updateMetrics(payload);
+        setRunStatus(`Completed ${payload.result.runs} run(s).`, true);
+      } catch (error) {
+        setRunStatus(`Simulation error: ${error.message}`, true);
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    });
+  </script>
+</body>
+</html>

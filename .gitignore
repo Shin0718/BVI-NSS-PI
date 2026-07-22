@@ -3,3 +3,7 @@ __pycache__/
 .DS_Store
 .claude/
 *.log
+.matplotlib/
+cache/
+reports/*
+!reports/.gitkeep
