@@ -552,6 +552,35 @@
       word-break: break-all;
     }
 
+    .route-preview {
+      display: none;
+      margin-top: 16px;
+      border: 1px solid #dededc;
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .route-preview.active {
+      display: block;
+    }
+
+    .route-preview-title {
+      padding: 12px 14px;
+      border-bottom: 1px solid #e6e6e4;
+      color: #333;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .route-preview img {
+      display: block;
+      width: 100%;
+      max-height: 520px;
+      object-fit: contain;
+      background: #fafafa;
+    }
+
     @media (max-width: 1180px) {
       .layout {
         grid-template-columns: 1fr;
@@ -892,6 +921,10 @@
             </div>
           </div>
           <div id="metricReportPath" class="metric-path"></div>
+          <div id="routePreview" class="route-preview">
+            <div class="route-preview-title">Route Map Output</div>
+            <img id="routeMapImage" alt="Generated route map output" />
+          </div>
         </section>
       </section>
     </div>
@@ -1022,6 +1055,15 @@
       document.getElementById("metricRisk").textContent = result.risk_level;
       document.getElementById("metricProbe").textContent = Number(result.stop_probe_count).toFixed(1).replace(".0", "");
       document.getElementById("metricReportPath").textContent = `Report: ${response.report_path}`;
+      const routePreview = document.getElementById("routePreview");
+      const routeMapImage = document.getElementById("routeMapImage");
+      if (result.map_image_url) {
+        routeMapImage.src = `${result.map_image_url}?t=${Date.now()}`;
+        routePreview.classList.add("active");
+      } else {
+        routeMapImage.removeAttribute("src");
+        routePreview.classList.remove("active");
+      }
     }
 
     document.getElementById("startSimulation").addEventListener("click", async () => {

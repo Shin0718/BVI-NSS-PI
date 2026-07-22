@@ -13,7 +13,7 @@ import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from statistics import mean, stdev
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -73,6 +73,18 @@ def _extract_familiarity(payload):
     return 0 if familiarity == "unfamiliar" else 1
 
 
+def _report_url(file_path):
+    """Convert a generated report path into a local URL."""
+    if not file_path:
+        return None
+    try:
+        path = Path(file_path).resolve()
+        relative = path.relative_to(BASE_DIR)
+    except (OSError, ValueError):
+        return None
+    return "/" + relative.as_posix()
+
+
 def _summarize_single_run(summary):
     """Convert a single simulation report into the API response shape."""
     result = summary.get("result", {})
@@ -89,6 +101,8 @@ def _summarize_single_run(summary):
         "stop_probe_count": int(result.get("stop_probe_count", 0)),
         "total_steps": int(result.get("total_steps", 0)),
         "gate_passed_count": int(result.get("gate_passed_count", 0)),
+        "map_image_url": _report_url(summary.get("map_image")),
+        "actr_chart_url": _report_url(summary.get("actr_overview_chart_image")),
     }
 
 
@@ -98,6 +112,8 @@ def _summarize_monte_carlo(summary):
     rows = summary.get("run_details", [])
     risk_mean = float(aggregate.get("risk_mean", 0.0))
     high_load_counts = []
+    map_image_url = None
+    actr_chart_url = None
 
     for row in rows:
         json_path = row.get("summary_json")
@@ -108,6 +124,10 @@ def _summarize_monte_carlo(summary):
                 run_summary = json.load(handle)
             high_load_counts.append(
                 int(run_summary.get("result", {}).get("actr_iw_high_count", 0))
+            )
+            map_image_url = map_image_url or _report_url(run_summary.get("map_image"))
+            actr_chart_url = actr_chart_url or _report_url(
+                run_summary.get("actr_overview_chart_image")
             )
         except OSError:
             continue
@@ -128,6 +148,8 @@ def _summarize_monte_carlo(summary):
         "stop_probe_std": float(aggregate.get("stop_probe_std", 0.0)),
         "risk_std": float(aggregate.get("risk_std", 0.0)),
         "cognitive_load_std": float(aggregate.get("actr_iw_std", 0.0)),
+        "map_image_url": map_image_url,
+        "actr_chart_url": actr_chart_url,
     }
 
 
@@ -460,6 +482,45 @@ class BviSasRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_report_file(self, *, include_body):
+        """Serve a generated report file from the reports directory."""
+        path = unquote(urlparse(self.path).path)
+        file_path = (BASE_DIR / path.lstrip("/")).resolve()
+        reports_dir = (BASE_DIR / "reports").resolve()
+        try:
+            file_path.relative_to(reports_dir)
+        except ValueError:
+            self.send_error(403, "Forbidden")
+            return
+        if not file_path.is_file():
+            self.send_error(404, "File not found")
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", self.guess_type(str(file_path)))
+        self.send_header("Content-Length", str(file_path.stat().st_size))
+        self.end_headers()
+        if include_body:
+            with open(file_path, "rb") as handle:
+                self.copyfile(handle, self.wfile)
+
+    def do_GET(self):
+        """Serve the web app and generated report images."""
+        path = unquote(urlparse(self.path).path)
+        if path.startswith("/reports/"):
+            self._send_report_file(include_body=True)
+            return
+
+        super().do_GET()
+
+    def do_HEAD(self):
+        """Serve report metadata for generated images."""
+        path = unquote(urlparse(self.path).path)
+        if path.startswith("/reports/"):
+            self._send_report_file(include_body=False)
+            return
+
+        super().do_HEAD()
 
     def do_POST(self):
         """Handle API requests from the local web interface."""
