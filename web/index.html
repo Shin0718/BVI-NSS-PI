@@ -650,6 +650,12 @@
               <button class="active">Familiar</button><button>Unfamiliar</button>
             </div>
           </div>
+          <div class="field">
+            <label>Device Trust</label>
+            <div class="segmented">
+              <button>Low</button><button class="active">Medium</button><button>High</button>
+            </div>
+          </div>
         </section>
 
         <section class="card">
@@ -744,11 +750,11 @@
                   </thead>
                   <tbody>
                     <tr><td>Obstacle</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>High</option><option>Medium</option><option>Low</option></select></td></tr>
+                    <tr><td>Small ground obstacle</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
                     <tr><td>Vehicle approach</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
                     <tr><td>Crossing</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
                     <tr><td>Landmark</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>High</option><option>Medium</option><option>Low</option></select></td></tr>
                     <tr><td>Text or sign</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
-                    <tr><td>People or crowd</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
                     <tr><td>Building entrance</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Low</option><option>Medium</option><option>High</option></select></td></tr>
                   </tbody>
                 </table>
@@ -870,11 +876,6 @@
             <div class="panel-grid">
               <div class="card">
                 <h2 class="subhead">Cognitive Impact Controls</h2>
-                <div class="range-line">
-                  <label>Perceived Trust</label>
-                  <input type="range" min="1" max="3" value="2">
-                  <div class="range-value">Med.</div>
-                </div>
                 <div class="range-line">
                   <label>Information Load</label>
                   <input type="range" min="1" max="3" value="2">
@@ -1013,7 +1014,8 @@
           tactile_paving: activeText(scenarioCard.querySelectorAll(".segmented")[2])
         },
         user_profile: {
-          familiarity: activeText(profileCard.querySelector(".segmented"))
+          familiarity: activeText(profileCard.querySelectorAll(".segmented")[0]),
+          device_trust: activeText(profileCard.querySelectorAll(".segmented")[1])
         },
         simulation: {
           runs: Number(document.getElementById("runs").value || 1),

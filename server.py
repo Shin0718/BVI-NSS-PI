@@ -211,6 +211,14 @@ def _range_enabled(items, name, default=True):
     return default if value is None else bool(value)
 
 
+def _detection_rate(item, rates, default=0.0):
+    """Map an enabled High/Medium/Low detection row to an explicit rate."""
+    if not item or not item.get("enabled", False):
+        return 0.0
+    level = str(item.get("value", "Medium")).strip().lower()
+    return rates.get(level, default)
+
+
 def _parse_lat_lon(value):
     """Parse a latitude-longitude text field."""
     try:
@@ -258,6 +266,7 @@ def _derive_model_overrides(payload):
     scenario = payload.get("scenario", {})
     simulation = payload.get("simulation", {})
     device = payload.get("device", {})
+    user_profile = payload.get("user_profile", {})
     feedback = payload.get("feedback", {})
     walking = payload.get("walking_response", {})
     duration = payload.get("reference_duration", {})
@@ -295,13 +304,26 @@ def _derive_model_overrides(payload):
     )
     _set_override(overrides, "MAX_STEPS", int(200 * scenario_factor))
 
-    obstacle_factor = _enabled_factor(_find_named(references, "Obstacle"))
+    obstacle_rate = _detection_rate(
+        _find_named(references, "Obstacle"),
+        {"low": 0.60, "medium": 0.75, "high": 0.90},
+        default=0.75,
+    )
+    small_ground_rate = _detection_rate(
+        _find_named(references, "Small ground obstacle"),
+        {"low": 0.20, "medium": 0.40, "high": 0.60},
+        default=0.40,
+    )
     vehicle_factor = _enabled_factor(_find_named(references, "Vehicle approach"))
     crossing_factor = _enabled_factor(_find_named(references, "Crossing"))
     landmark_factor = _enabled_factor(_find_named(references, "Landmark"))
     text_factor = _enabled_factor(_find_named(references, "Text or sign"))
-    people_factor = _enabled_factor(_find_named(references, "People or crowd"))
     entrance_factor = _enabled_factor(_find_named(references, "Building entrance"))
+    device_trust_level = str(user_profile.get("device_trust", "Medium")).strip().lower()
+    device_trust = {"low": 0.35, "medium": 0.65, "high": 0.85}.get(
+        device_trust_level, 0.65
+    )
+    trust_gap = max(0.0, 1.0 - device_trust)
 
     device_factor = {
         "smart cane": (1.2, 0.7, 0.8, 0.8),
@@ -313,15 +335,15 @@ def _derive_model_overrides(payload):
         "indoor landmark navigation": (0.5, 0.3, 0.8, 1.8),
     }.get(str(device.get("type", "")).strip().lower(), (1.0, 1.0, 1.0, 1.0))
 
-    _set_override(overrides, "CANE_OBSTACLE_PROB", 0.00179 * obstacle_factor * device_factor[0])
-    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(obstacle_factor, tactile_factor * 0.6))
-    _set_override(overrides, "CANE_WALL_PROB", 0.00507 * obstacle_factor)
-    _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * obstacle_factor)
+    _set_override(overrides, "CANE_OBSTACLE_PROB", 0.00179 * obstacle_rate * device_factor[0])
+    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(small_ground_rate, tactile_factor * 0.35))
+    _set_override(overrides, "CANE_WALL_PROB", 0.00507 * obstacle_rate)
+    _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * obstacle_rate)
     _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", 0.00142 * vehicle_factor * traffic_factor * device_factor[1])
     _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", 0.00574 * vehicle_factor * crossing_factor * traffic_factor)
     _set_override(overrides, "SOUND_HORN_PROB", 0.000167 * traffic_factor * vehicle_factor)
     _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", 0.000251 * traffic_factor * vehicle_factor)
-    _set_override(overrides, "SOUND_HUMAN_ACTIVITY_PROB", 0.01036 * crowd_factor * max(people_factor, 0.2))
+    _set_override(overrides, "SOUND_HUMAN_ACTIVITY_PROB", 0.01036 * crowd_factor)
     _set_override(overrides, "CROSSING_HORN_PROB", 0.00313 * crossing_factor * traffic_factor)
     _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", 0.02402 * crossing_factor * crowd_factor)
 
@@ -338,7 +360,11 @@ def _derive_model_overrides(payload):
     auditory_share = 0.20 * _enabled_factor(beep, low=0.6, medium=1.0, high=1.25)
     auditory_share += 0.20 * _enabled_factor(speech, low=0.65, medium=1.0, high=1.35)
     auditory_share += 0.15 * _enabled_factor(spatial_audio, low=0.65, medium=1.0, high=1.35)
-    manual_share = 0.20 + (0.15 if walking.get("require_cane_confirmation") == "Yes" else 0.0)
+    manual_share = (
+        0.20
+        + (0.15 if walking.get("require_cane_confirmation") == "Yes" else 0.0)
+        + 0.25 * trust_gap
+    )
     total_share = max(0.01, auditory_share + tactile_share + manual_share)
     _set_override(overrides, "ACTR_AUDITORY_SHARE", auditory_share / total_share)
     _set_override(overrides, "ACTR_TACTILE_SHARE", tactile_share / total_share)
@@ -375,16 +401,22 @@ def _derive_model_overrides(payload):
     _set_override(overrides, "UTILITY_DANGER_RESPONSE", 10.5 if default_response == "stop and probe" else 8.5)
     _set_override(overrides, "UTILITY_DEFAULT_FORWARD", 5.0 if default_response == "continue" else 4.0)
     _set_override(overrides, "UTILITY_SAFETY_CRITICAL", 12.8 if high_risk_response == "wait" else 11.4)
-    _set_override(overrides, "PROBE_RELIEF_RATIO", 0.42 if walking.get("require_cane_confirmation") == "Yes" else 0.22)
+    _set_override(
+        overrides,
+        "PROBE_RELIEF_RATIO",
+        (0.42 if walking.get("require_cane_confirmation") == "Yes" else 0.22)
+        + 0.16 * trust_gap,
+    )
     _set_override(overrides, "ACTR_LOAD_RESUME_THRESHOLD", {"Fast": 5.8, "Normal": 5.0, "Slow": 4.4}.get(recovery, 5.0))
     _set_override(overrides, "LOOMING_RESUME_THRESHOLD", {"Fast": 0.16, "Normal": 0.10, "Slow": 0.06}.get(recovery, 0.10))
 
-    trust = _range_value(cognitive, "Perceived Trust", 2)
+    trust = _range_value(cognitive, "Device Trust", {"low": 1, "medium": 2, "high": 3}.get(device_trust_level, 2))
     information_load = _range_value(cognitive, "Information Load", 2)
     auditory_interference = _range_value(cognitive, "Auditory Interference", 1)
     false_alarm = _range_value(cognitive, "False Alarm Impact", 2)
     missed_alert = _range_value(cognitive, "Missed Alert Risk", 2)
     _set_override(overrides, "MEMORY_ACTIVE_RETRIEVAL_TH", {1: 0.10, 2: 0.07, 3: 0.04}.get(trust, 0.07))
+    _set_override(overrides, "DEVICE_TRUST", device_trust)
     _set_override(overrides, "ACTR_IW_HIGH_THRESHOLD", {1: 7.0, 2: 6.0, 3: 5.0}.get(information_load, 6.0))
     _set_override(overrides, "ACTR_CENTRAL_WEIGHT", {1: 1.6, 2: 2.0, 3: 2.5}.get(information_load, 2.0))
     _set_override(overrides, "ACTR_AUDITORY_SHARE", overrides["ACTR_AUDITORY_SHARE"] * {1: 0.85, 2: 1.0, 3: 1.2}.get(auditory_interference, 1.0))
