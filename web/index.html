@@ -925,6 +925,10 @@
             <div class="route-preview-title">Route Map Output</div>
             <img id="routeMapImage" alt="Generated route map output" />
           </div>
+          <div id="actrPreview" class="route-preview">
+            <div class="route-preview-title">ACT-R Load Dashboard</div>
+            <img id="actrChartImage" alt="Generated ACT-R load dashboard" />
+          </div>
         </section>
       </section>
     </div>
@@ -1057,12 +1061,21 @@
       document.getElementById("metricReportPath").textContent = `Report: ${response.report_path}`;
       const routePreview = document.getElementById("routePreview");
       const routeMapImage = document.getElementById("routeMapImage");
+      const actrPreview = document.getElementById("actrPreview");
+      const actrChartImage = document.getElementById("actrChartImage");
       if (result.map_image_url) {
         routeMapImage.src = `${result.map_image_url}?t=${Date.now()}`;
         routePreview.classList.add("active");
       } else {
         routeMapImage.removeAttribute("src");
         routePreview.classList.remove("active");
+      }
+      if (result.actr_chart_url) {
+        actrChartImage.src = `${result.actr_chart_url}?t=${Date.now()}`;
+        actrPreview.classList.add("active");
+      } else {
+        actrChartImage.removeAttribute("src");
+        actrPreview.classList.remove("active");
       }
     }
 
