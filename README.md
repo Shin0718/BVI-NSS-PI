@@ -30,7 +30,7 @@ python server.py
 Open the local site in a browser:
 
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:8765
 ```
 
 The site runs on the user's own machine. No hosted server, account system, or cloud deployment is required.
@@ -77,7 +77,7 @@ python server.py
 Then open:
 
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:8765
 ```
 
 The web interface sends the selected configuration to the local `/simulate` endpoint. The server maps the scenario, device capability, feedback timing, walking response, reference duration, and cognitive impact controls to runtime model parameters before each simulation run. Overrides are applied only for the active run and are restored afterward, so the source defaults in `BVI-SAS/` remain unchanged.

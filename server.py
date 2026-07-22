@@ -396,6 +396,17 @@ def _temporary_model_overrides(payload):
             module_dict[name] = value
 
 
+def _json_safe_parameters(parameters):
+    """Convert runtime parameter overrides into a JSON-safe response object."""
+    safe_values = {}
+    for name, value in parameters.items():
+        if callable(value):
+            safe_values[name] = "<runtime route loader>"
+        else:
+            safe_values[name] = value
+    return safe_values
+
+
 def run_simulation_from_payload(payload):
     """Run the existing simulation engine from a web request payload."""
     simulation = payload.get("simulation", {})
@@ -429,7 +440,7 @@ def run_simulation_from_payload(payload):
         "ok": True,
         "result": result,
         "report_path": str(report_path),
-        "applied_parameters": applied_parameters,
+        "applied_parameters": _json_safe_parameters(applied_parameters),
         "engine_log": log_buffer.getvalue()[-4000:],
         "received_config": payload,
     }
@@ -472,7 +483,7 @@ class BviSasRequestHandler(SimpleHTTPRequestHandler):
 
 def main():
     """Start the local product prototype server."""
-    port = 8000
+    port = int(os.environ.get("BVI_SAS_PORT", "8765"))
     server = ThreadingHTTPServer(("127.0.0.1", port), BviSasRequestHandler)
     print(f"BVI-SAS local site: http://127.0.0.1:{port}")
     print("Press Ctrl+C to stop the server.")

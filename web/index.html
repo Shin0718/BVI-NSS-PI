@@ -1039,7 +1039,7 @@
         });
         const contentType = response.headers.get("content-type") || "";
         if (!contentType.includes("application/json")) {
-          throw new Error("The simulation API did not return JSON. Start the local server with `python server.py` and open http://127.0.0.1:8000.");
+          throw new Error("The simulation API did not return JSON. Start the local server with `python server.py` and open http://127.0.0.1:8765.");
         }
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
