@@ -15,6 +15,8 @@ from pathlib import Path
 from statistics import mean, stdev
 from urllib.parse import unquote, urlparse
 
+import numpy as np
+
 
 BASE_DIR = Path(__file__).resolve().parent
 WEB_DIR = BASE_DIR / "web"
@@ -474,6 +476,7 @@ def run_simulation_from_payload(payload):
                     report_path = summary_path
                 else:
                     random.seed(seed)
+                    np.random.seed(seed)
                     _, _, summary_path = ENGINE_CLI.run(familiarity=familiarity)
                     with open(summary_path, "r", encoding="utf-8") as handle:
                         summary = json.load(handle)

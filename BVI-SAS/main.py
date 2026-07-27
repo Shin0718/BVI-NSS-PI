@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from statistics import mean, stdev
 
+import numpy as np
+
 try:
     from .simulation import run_simulation
     from .config import REPORT_DIR
@@ -130,6 +132,7 @@ def run_monte_carlo(
     for run_idx in range(runs):
         seed = int(seed_start) + run_idx
         random.seed(seed)
+        np.random.seed(seed)
 
         md_path, csv_path, json_path = run_simulation(
             familiarity_level=user_profile["familiarity_level"],
