@@ -309,14 +309,23 @@
 
     .route {
       position: absolute;
-      left: 13%;
+      left: 14%;
       bottom: 16%;
-      width: 57%;
+      width: 56%;
       height: 28%;
-      border-left: 7px solid var(--blue);
       border-bottom: 7px solid var(--blue);
       border-right: 7px solid var(--blue);
-      border-radius: 0 0 34px 34px;
+      border-radius: 0 0 34px 0;
+    }
+
+    .route::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -7px;
+      width: 9%;
+      border-bottom: 7px solid var(--blue);
+      transform: translateX(-100%);
     }
 
     .route::after {
