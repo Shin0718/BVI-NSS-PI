@@ -657,10 +657,13 @@
     }
 
     .terrain-only { display: none; }
+    .other-only { display: none; }
 
     .settings.terrain-mode .generic-only { display: none; }
     .settings.terrain-mode .terrain-only { display: grid; }
     .settings.hide-category .category-only { display: none; }
+    .settings.other-mode .range-only { display: none; }
+    .settings.other-mode .other-only { display: grid; }
 
     .terrain-type-row {
       align-items: start;
@@ -863,8 +866,9 @@
           <button type="button">高度落差路面</button>
         </div><span></span></div>
         <div class="row wide generic-only"><span class="bullet"></span><div data-simulator>障碍物识别范围模拟器</div></div>
-        <div class="row generic-only"><span></span><label>识别范围</label><div class="static-value" data-range>默认</div><span></span></div>
-        <div class="row generic-only"><span></span><label>范围影响系数</label><input class="input" data-factor value="1.24" /><span></span></div>
+        <div class="row generic-only range-only"><span></span><label>识别范围</label><div class="static-value" data-range>默认</div><span></span></div>
+        <div class="row generic-only range-only"><span></span><label>范围影响系数</label><input class="input" data-factor value="1.24" /><span></span></div>
+        <div class="row other-only"><span></span><label>模拟概率</label><input class="input" /><span></span></div>
         <div class="row"><span></span><label>作用时长</label><input class="input" /><span></span></div>
         <div class="row"><span></span><label>准备时长</label><input class="input" /><span></span></div>
         <div class="row wide generic-only category-only"><span class="bullet"></span><div data-category-simulator>障碍物类别触发模拟器（除盲杖外）</div></div>
@@ -934,7 +938,8 @@
         cn: "其他信息检测", en: "Other Information Detection", subtitle: "其他物体触发、概率、作用时间、反馈参数",
         trigger: "其他信息", simulator: "其他物体触发模拟器", range: "默认", factor: "",
         categorySimulator: "其他信息类别概率触发模拟器",
-        note: "预留给文本、标识、入口、POI 等非核心室外信息。",
+        showCategory: false,
+        note: "",
         cards: ["其他物体触发", "标识触发", "入口触发", "POI 触发", "信息竞争触发", "无"]
       }
     };
@@ -942,6 +947,7 @@
     function setPreset(key) {
       const p = presets[key] || presets.obstacle;
       document.querySelector(".settings").classList.toggle("terrain-mode", key === "terrain");
+      document.querySelector(".settings").classList.toggle("other-mode", key === "other");
       document.querySelector(".settings").classList.toggle("hide-category", p.showCategory === false);
       document.querySelector("[data-title-cn]").textContent = p.cn;
       document.querySelector("[data-title-en]").textContent = p.en;
