@@ -1005,7 +1005,37 @@
       });
     });
 
-    document.querySelectorAll(".drop-zone").forEach((zone) => {
+    function shiftedPosition(zone) {
+      const style = zone.getAttribute("style") || "";
+      const offset = 8;
+      return style.replace(/(top|bottom):([0-9.]+)%/g, (match, edge, value) => {
+        const current = Number(value);
+        const direction = zone.dataset.kind === "function" ? 1 : -1;
+        const next = edge === "bottom" ? current + direction * offset : current - direction * offset;
+        return `${edge}:${Math.max(4, Math.min(88, next))}%`;
+      });
+    }
+
+    function hasEmptySiblingZone(zone) {
+      return Boolean(document.querySelector(
+        `.drop-zone[data-slot="${zone.dataset.slot}"][data-kind="${zone.dataset.kind}"]:not(.filled)`
+      ));
+    }
+
+    function addFollowupZone(zone) {
+      if (hasEmptySiblingZone(zone)) return;
+      const clone = zone.cloneNode(true);
+      clone.classList.remove("filled", "is-over");
+      delete clone.dataset.value;
+      delete clone.dataset.label;
+      clone.dataset.extra = "true";
+      clone.setAttribute("style", shiftedPosition(zone));
+      clone.querySelector("span").textContent = clone.dataset.kind === "function" ? "功能" : "触发";
+      zone.after(clone);
+      bindDropZone(clone);
+    }
+
+    function bindDropZone(zone) {
       zone.addEventListener("dragenter", (event) => {
         event.preventDefault();
         zone.classList.add("is-over");
@@ -1024,13 +1054,21 @@
         event.stopPropagation();
         zone.classList.remove("is-over");
         const raw = event.dataTransfer.getData("text/plain") || event.dataTransfer.getData("application/json");
-        const payload = raw ? JSON.parse(raw) : currentDragPayload;
+        let payload = currentDragPayload;
+        if (raw) {
+          try {
+            payload = JSON.parse(raw);
+          } catch {
+            payload = currentDragPayload;
+          }
+        }
         if (!payload) return;
         if (payload.kind !== zone.dataset.kind) return;
         zone.dataset.value = payload.key;
         zone.dataset.label = payload.label;
         zone.classList.add("filled");
         zone.querySelector("span").textContent = payload.label;
+        addFollowupZone(zone);
       });
       zone.addEventListener("click", () => {
         delete zone.dataset.value;
@@ -1038,7 +1076,9 @@
         zone.classList.remove("filled");
         zone.querySelector("span").textContent = zone.dataset.kind === "function" ? "功能" : "触发";
       });
-    });
+    }
+
+    document.querySelectorAll(".drop-zone").forEach(bindDropZone);
   </script>
 </body>
 </html>
