@@ -327,6 +327,26 @@
       border-right: 7px solid var(--blue);
     }
 
+    .route-motion {
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .route-motion path {
+      fill: none;
+      stroke: transparent;
+    }
+
+    .route-motion polygon {
+      fill: #fff;
+      stroke: var(--blue);
+      stroke-width: .8;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.24));
+    }
+
     .dot {
       position: absolute;
       width: 24px;
@@ -671,6 +691,24 @@
             <div class="crosswalk-h" style="left:28%;top:44%;"><i></i><i></i><i></i></div>
             <div class="crosswalk-h" style="right:27%;top:44%;"><i></i><i></i><i></i></div>
             <div class="route"></div>
+            <svg class="route-motion" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <path id="route-flow-path" d="M15 76 H66 Q70 76 70 68 V31"></path>
+              <polygon points="0,-2.6 5,0 0,2.6">
+                <animateMotion dur="3.8s" repeatCount="indefinite" rotate="auto">
+                  <mpath href="#route-flow-path"></mpath>
+                </animateMotion>
+              </polygon>
+              <polygon points="0,-2.4 4.6,0 0,2.4" opacity=".72">
+                <animateMotion dur="3.8s" begin="1.25s" repeatCount="indefinite" rotate="auto">
+                  <mpath href="#route-flow-path"></mpath>
+                </animateMotion>
+              </polygon>
+              <polygon points="0,-2.4 4.6,0 0,2.4" opacity=".48">
+                <animateMotion dur="3.8s" begin="2.5s" repeatCount="indefinite" rotate="auto">
+                  <mpath href="#route-flow-path"></mpath>
+                </animateMotion>
+              </polygon>
+            </svg>
             <div class="dot" style="left:12%;bottom:15%;"></div>
             <div class="dot orange" style="right:29%;top:32%;"></div>
             <div class="dot orange" style="right:30.4%;top:18%;"></div>
