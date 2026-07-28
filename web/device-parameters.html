@@ -540,7 +540,7 @@
 
     .settings {
       grid-area: settings;
-      padding: 18px 20px;
+      padding: 14px 18px;
       height: 100%;
       min-height: 0;
       overflow: hidden;
@@ -549,103 +549,103 @@
     .setting-title {
       display: flex;
       align-items: baseline;
-      gap: 14px;
-      padding-bottom: 12px;
+      gap: 12px;
+      padding-bottom: 9px;
       border-bottom: 1px solid var(--line);
-      margin-bottom: 16px;
-      font-size: clamp(14px, .95vw, 17px);
+      margin-bottom: 12px;
+      font-size: clamp(13px, .86vw, 15px);
       font-weight: 950;
     }
 
     .setting-title span {
       color: #c5cace;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 750;
     }
 
     .setting-subtitle {
-      font-size: 13px;
+      font-size: 12px;
       color: #e2e5e7;
       font-weight: 900;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     .row {
       display: grid;
-      grid-template-columns: 14px minmax(88px, 112px) minmax(0,1fr) 42px;
-      gap: 9px;
+      grid-template-columns: 12px minmax(82px, 102px) minmax(0,1fr) 34px;
+      gap: 7px;
       align-items: center;
-      min-height: 38px;
-      margin-bottom: 7px;
+      min-height: 30px;
+      margin-bottom: 4px;
       color: #d7dbde;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 850;
     }
 
-    .row.wide { grid-template-columns: 16px 1fr; }
+    .row.wide { grid-template-columns: 14px 1fr; }
 
     .bullet {
-      width: 10px;
-      height: 10px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: var(--accent);
     }
 
     .input {
-      height: 36px;
+      height: 30px;
       border: 1px solid rgba(190,199,205,.38);
       background: rgba(15,17,19,.35);
       color: #d9dde0;
-      padding: 0 10px;
-      font-size: 13px;
+      padding: 0 9px;
+      font-size: 12px;
       font-weight: 850;
       outline: none;
     }
 
     .static-value {
-      min-height: 36px;
+      min-height: 30px;
       display: flex;
       align-items: center;
       color: #cfd4d7;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 850;
     }
 
     .hint-text {
       color: #b7bdc1;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
     }
 
     .settings-section {
-      margin-top: 20px;
-      padding-top: 8px;
+      margin-top: 14px;
+      padding-top: 5px;
     }
 
     .settings-section h3 {
-      margin: 0 0 8px;
-      font-size: 14px;
+      margin: 0 0 6px;
+      font-size: 13px;
       color: #e4e6e8;
     }
 
     .section-rule {
       height: 1px;
       background: var(--line);
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     .mode {
       display: grid;
       grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 8px;
+      gap: 7px;
     }
 
     .mode button {
-      height: 36px;
+      height: 30px;
       border: 1px solid rgba(190,199,205,.38);
       background: rgba(15,17,19,.35);
       color: #c9ced1;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 900;
       cursor: pointer;
     }
@@ -838,7 +838,7 @@
             <button type="button">触觉</button>
             <button type="button">牵引力</button>
           </div>
-          <div class="row" style="margin-top:24px;"><span class="bullet"></span><label>提醒时长</label><input class="input" value="0.2 s" /><span></span></div>
+          <div class="row" style="margin-top:12px;"><span class="bullet"></span><label>提醒时长</label><input class="input" value="0.2 s" /><span></span></div>
           <div class="row"><span class="bullet"></span><label>提醒频率</label><input class="input" value="1 Hz" /><span></span></div>
           <div class="row"><span class="bullet"></span><label>竞争系数</label><input class="input" /><span></span></div>
         </div>
