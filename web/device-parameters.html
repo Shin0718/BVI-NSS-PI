@@ -867,7 +867,7 @@
         </div><span></span></div>
         <div class="row wide generic-only"><span class="bullet"></span><div data-simulator>障碍物识别范围模拟器</div></div>
         <div class="row generic-only range-only"><span></span><label>识别范围</label><div class="static-value" data-range>默认</div><span></span></div>
-        <div class="row generic-only range-only"><span></span><label>范围影响系数</label><input class="input" data-factor value="1.24" /><span></span></div>
+        <div class="row generic-only range-only"><span></span><label>范围影响系数</label><input class="input" data-factor /><span></span></div>
         <div class="row other-only"><span></span><label>模拟概率</label><input class="input" /><span></span></div>
         <div class="row"><span></span><label>作用时长</label><input class="input" /><span></span></div>
         <div class="row"><span></span><label>准备时长</label><input class="input" /><span></span></div>
@@ -886,8 +886,8 @@
             <button type="button">触觉</button>
             <button type="button">牵引力</button>
           </div>
-          <div class="row" style="margin-top:14px;"><span class="bullet"></span><label>提醒时长</label><input class="input" value="0.2 s" /><span></span></div>
-          <div class="row"><span class="bullet"></span><label>提醒频率</label><input class="input" value="1 Hz" /><span></span></div>
+          <div class="row" style="margin-top:14px;"><span class="bullet"></span><label>提醒时长</label><input class="input" /><span></span></div>
+          <div class="row"><span class="bullet"></span><label>提醒频率</label><input class="input" /><span></span></div>
           <div class="row"><span class="bullet"></span><label>竞争系数</label><input class="input" /><span></span></div>
         </div>
       </aside>
@@ -898,33 +898,33 @@
     const presets = {
       obstacle: {
         cn: "障碍物检测", en: "Obstacle Detection", subtitle: "范围、类别、概率、作用时间、反馈参数",
-        trigger: "障碍物", simulator: "障碍物识别范围模拟器", range: "默认", factor: "1.24",
+        trigger: "障碍物", simulator: "障碍物识别范围模拟器", range: "默认", factor: "",
         categorySimulator: "障碍物类别触发模拟器（除盲杖外）",
         note: "触发概率 = 采集中触发的时间长度 / 总行走时间长度"
       },
       terrain: {
         cn: "地势检测", en: "Terrain Detection", subtitle: "地面类型、概率、作用时间、反馈参数",
-        trigger: "地面类型", simulator: "地面类型触发模拟器", range: "路口 / 平整路面 / 盲道 / 不平整自然路面 / 坡度路面 / 高度落差路面", factor: "0.05",
+        trigger: "地面类型", simulator: "地面类型触发模拟器", range: "路口 / 平整路面 / 盲道 / 不平整自然路面 / 坡度路面 / 高度落差路面", factor: "",
         categorySimulator: "地面类型概率触发模拟器",
         note: "默认误报/漏报概率为 0.05"
       },
       pedestrian: {
         cn: "行人检测", en: "Pedestrian Detection", subtitle: "行人触发、识别范围、作用时间、反馈参数",
-        trigger: "行人", simulator: "行人触发模拟器", range: "默认", factor: "1.18",
+        trigger: "行人", simulator: "行人触发模拟器", range: "默认", factor: "",
         categorySimulator: "行人类别概率触发模拟器",
         showCategory: false,
         note: ""
       },
       vehicle: {
         cn: "车辆接近检测", en: "Vehicle Approach Detection", subtitle: "车辆触发、识别范围、作用时间、反馈参数",
-        trigger: "车辆接近", simulator: "车辆触发模拟器", range: "默认", factor: "1.18",
+        trigger: "车辆接近", simulator: "车辆触发模拟器", range: "默认", factor: "",
         categorySimulator: "车辆类别概率触发模拟器",
         showCategory: false,
         note: ""
       },
       guidance: {
         cn: "引导物检测", en: "Guidance Object Detection", subtitle: "引导物触发、识别范围、作用时间、反馈参数",
-        trigger: "引导物", simulator: "引导物触发模拟器", range: "默认", factor: "1.18",
+        trigger: "引导物", simulator: "引导物触发模拟器", range: "默认", factor: "",
         categorySimulator: "引导物类别概率触发模拟器",
         showCategory: false,
         note: ""
