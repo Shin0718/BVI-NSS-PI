@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BVI-SAS 设备参数界面</title>
+  <style>
+    :root {
+      --bg: #111315;
+      --panel: #2e3438;
+      --panel-2: #383f43;
+      --text: #f3f4f4;
+      --muted: #aeb4b8;
+      --line: rgba(255, 255, 255, 0.12);
+      --accent: #ff6a2a;
+      --blue: #347dff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0f1112;
+      color: var(--text);
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 22px;
+      background:
+        radial-gradient(circle at 80% 0%, rgba(255,255,255,.08), transparent 26%),
+        linear-gradient(135deg, #111315, #22272a);
+    }
+
+    .topbar {
+      height: 58px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--accent);
+      display: grid;
+      place-items: center;
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 1;
+      box-shadow: 0 10px 22px rgba(0,0,0,.28);
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .run-controls {
+      display: flex;
+      gap: 12px;
+    }
+
+    .run-btn {
+      height: 50px;
+      min-width: 124px;
+      border: 0;
+      border-radius: 10px;
+      background: #353a3e;
+      color: #b8bec2;
+      font-weight: 850;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .run-btn.primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .ready {
+      justify-self: end;
+      height: 42px;
+      padding: 0 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(114,223,103,.28);
+      background: rgba(114,223,103,.12);
+      color: #8eeb88;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+    }
+
+    .ready::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #72df67;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 230px 185px minmax(620px, 1fr) 500px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(49, 56, 60, .92);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 14px;
+      box-shadow: 0 18px 44px rgba(0,0,0,.32);
+    }
+
+    .left-panel, .trigger-panel {
+      padding: 18px;
+      min-height: 640px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .panel-head span {
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    .function-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .function-list button {
+      min-height: 82px;
+      border: 0;
+      border-radius: 8px;
+      padding: 15px 18px;
+      background: rgba(255,255,255,.08);
+      color: #d6d9db;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+
+    .function-list button span {
+      display: block;
+      color: #b9bec2;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .function-list button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .function-list button.active span { color: #fff; }
+
+    .trigger-card {
+      height: 84px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      background: #eceeef;
+      color: #323638;
+      display: grid;
+      place-items: center;
+      padding: 12px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .center {
+      display: grid;
+      gap: 14px;
+    }
+
+    .map-panel {
+      overflow: hidden;
+    }
+
+    .scenario-title {
+      height: 60px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 900;
+    }
+
+    .scenario-title span { color: var(--muted); }
+
+    .info {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--muted);
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+    }
+
+    .map {
+      position: relative;
+      height: 520px;
+      background: #4e5051;
+      overflow: hidden;
+    }
+
+    .road-v { position: absolute; left: 39%; top: 0; width: 26%; height: 100%; background: #4e5051; }
+    .road-h { position: absolute; left: 0; top: 33%; width: 100%; height: 31%; background: #4e5051; }
+    .block { position: absolute; background: #c8c2b6; }
+    .building { position: absolute; border-radius: 6px; background: rgba(104,104,98,.34); }
+
+    .crosswalk-v {
+      position: absolute;
+      display: grid;
+      grid-template-columns: repeat(4, 34px);
+      gap: 8px;
+    }
+
+    .crosswalk-h {
+      position: absolute;
+      display: grid;
+      grid-template-rows: repeat(3, 26px);
+      gap: 9px;
+    }
+
+    .crosswalk-v i, .crosswalk-h i { display: block; background: #e8e7e0; }
+
+    .route {
+      position: absolute;
+      left: 13%;
+      bottom: 16%;
+      width: 57%;
+      height: 148px;
+      border-left: 8px solid var(--blue);
+      border-bottom: 8px solid var(--blue);
+      border-right: 8px solid var(--blue);
+      border-radius: 0 0 34px 34px;
+    }
+
+    .route::after {
+      content: "";
+      position: absolute;
+      right: -8px;
+      top: -125px;
+      height: 132px;
+      border-right: 8px solid var(--blue);
+    }
+
+    .dot {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #fff;
+      border: 6px solid var(--blue);
+      z-index: 5;
+    }
+
+    .dot.orange { border-color: var(--accent); }
+
+    .pill {
+      position: absolute;
+      min-width: 138px;
+      height: 44px;
+      border-radius: 999px;
+      background: #fff;
+      color: #585d60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      z-index: 6;
+      box-shadow: 0 8px 22px rgba(0,0,0,.2);
+    }
+
+    .pill.start { background: var(--blue); color: #fff; }
+
+    .marker {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 950;
+      z-index: 8;
+    }
+
+    .marker-label {
+      position: absolute;
+      height: 54px;
+      min-width: 170px;
+      padding: 0 22px;
+      border-radius: 13px;
+      background: rgba(255,255,255,.92);
+      color: #777d80;
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 900;
+      z-index: 7;
+    }
+
+    .legend {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      padding: 0 18px;
+      color: #bfc4c7;
+      font-size: 13px;
+      font-weight: 850;
+      background: rgba(19,22,24,.84);
+    }
+
+    .line-key {
+      display: inline-block;
+      width: 46px;
+      height: 5px;
+      background: var(--blue);
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+
+    .result-panel {
+      padding: 18px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      height: 116px;
+      border-radius: 6px;
+      background: rgba(255,255,255,.16);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric label { color: #c9ced1; font-size: 13px; font-weight: 850; }
+    .metric strong { font-size: 34px; font-weight: 800; color: #fff; }
+    .metric span { color: #72df67; font-size: 12px; font-weight: 900; }
+
+    .chart {
+      height: 250px;
+      margin-top: 16px;
+      background: #f7f5f3;
+      display: grid;
+      place-items: center;
+      border: 1px solid #d7d2cd;
+    }
+
+    .chart svg { width: 100%; height: 100%; }
+
+    .settings {
+      padding: 26px 28px;
+      min-height: 740px;
+      max-height: calc(100vh - 110px);
+      overflow: auto;
+    }
+
+    .setting-title {
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+      font-size: 17px;
+      font-weight: 950;
+    }
+
+    .setting-title span {
+      color: #c5cace;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .setting-subtitle {
+      font-size: 14px;
+      color: #e2e5e7;
+      font-weight: 900;
+      margin-bottom: 20px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 16px 130px minmax(0,1fr) 70px;
+      gap: 12px;
+      align-items: center;
+      min-height: 48px;
+      margin-bottom: 10px;
+      color: #d7dbde;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .row.wide { grid-template-columns: 16px 1fr; }
+
+    .bullet {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .input {
+      height: 44px;
+      border: 1px solid rgba(190,199,205,.38);
+      background: rgba(15,17,19,.35);
+      color: #d9dde0;
+      padding: 0 14px;
+      font-size: 15px;
+      font-weight: 850;
+      outline: none;
+    }
+
+    .hint-text {
+      color: #b7bdc1;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .settings-section {
+      margin-top: 36px;
+      padding-top: 8px;
+    }
+
+    .settings-section h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #e4e6e8;
+    }
+
+    .section-rule {
+      height: 1px;
+      background: var(--line);
+      margin-bottom: 22px;
+    }
+
+    .mode {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 10px;
+    }
+
+    .mode button {
+      height: 42px;
+      border: 1px solid rgba(190,199,205,.38);
+      background: rgba(15,17,19,.35);
+      color: #c9ced1;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .mode button.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    @media (max-width: 1500px) {
+      .layout { grid-template-columns: 220px minmax(600px, 1fr) 440px; }
+      .trigger-panel { display: none; }
+    }
+
+    @media (max-width: 1120px) {
+      .topbar { grid-template-columns: 1fr; height: auto; }
+      .ready { justify-self: start; }
+      .layout { grid-template-columns: 1fr; }
+      .settings { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">|</div>
+        <div>
+          <strong>BVI-SAS 认知干预模拟器</strong>
+          <span>BVI Simulation Platform</span>
+        </div>
+      </div>
+      <div class="run-controls">
+        <button class="run-btn primary" type="button">▶ 运行</button>
+        <button class="run-btn" type="button">暂停 Pause</button>
+        <button class="run-btn" type="button">重置 Reset</button>
+      </div>
+      <div class="ready">就绪 / Ready</div>
+    </header>
+
+    <div class="layout">
+      <aside class="panel left-panel">
+        <div class="panel-head"><strong>产品功能</strong><span>function</span></div>
+        <nav class="function-list" aria-label="产品功能">
+          <button class="active" data-key="obstacle" type="button">障碍物检测<span>Obstacle Detection</span></button>
+          <button data-key="terrain" type="button">地势检测<span>Terrain Detection</span></button>
+          <button data-key="pedestrian" type="button">行人检测<span>Pedestrian Detection</span></button>
+          <button data-key="vehicle" type="button">车辆接近检测<span>Vehicle Approach Detection</span></button>
+          <button data-key="guidance" type="button">引导物检测<span>Guidance Object Detection</span></button>
+          <button data-key="other" type="button">其他信息检测<span>Other Information Detection</span></button>
+        </nav>
+      </aside>
+
+      <aside class="panel trigger-panel">
+        <div class="panel-head"><strong>触发条件</strong><span>trigger</span></div>
+        <div class="trigger-card" data-trigger="0">障碍物范围触发</div>
+        <div class="trigger-card" data-trigger="1">障碍物类别概率触发</div>
+        <div class="trigger-card" data-trigger="2">盲杖外障碍触发</div>
+        <div class="trigger-card" data-trigger="3">误报/漏报触发</div>
+        <div class="trigger-card" data-trigger="4">反馈竞争触发</div>
+      </aside>
+
+      <section class="center">
+        <div class="panel map-panel">
+          <div class="scenario-title">
+            <strong>固定场景</strong>
+            <span>Fixed Scenario: Standard Urban Crossing</span>
+            <span class="info">i</span>
+          </div>
+          <div class="map">
+            <div class="road-v"></div>
+            <div class="road-h"></div>
+            <div class="block" style="left:0;top:0;width:38%;height:31%;"></div>
+            <div class="block" style="right:0;top:0;width:37%;height:31%;"></div>
+            <div class="block" style="left:0;bottom:0;width:38%;height:24%;"></div>
+            <div class="block" style="right:0;bottom:0;width:37%;height:24%;"></div>
+            <div class="building" style="left:6%;top:7%;width:17%;height:16%;"></div>
+            <div class="building" style="right:6%;top:5%;width:19%;height:20%;"></div>
+            <div class="building" style="left:22%;bottom:13%;width:13%;height:13%;"></div>
+            <div class="building" style="right:16%;bottom:9%;width:13%;height:19%;"></div>
+            <div class="crosswalk-v" style="left:41%;top:24%;"><i></i><i></i><i></i><i></i></div>
+            <div class="crosswalk-v" style="left:41%;bottom:16%;"><i></i><i></i><i></i><i></i></div>
+            <div class="crosswalk-h" style="left:27%;top:38%;width:118px;"><i></i><i></i><i></i></div>
+            <div class="crosswalk-h" style="right:26%;top:38%;width:118px;"><i></i><i></i><i></i></div>
+            <div class="route"></div>
+            <div class="dot" style="left:12%;bottom:15%;"></div>
+            <div class="dot orange" style="right:29%;top:32%;"></div>
+            <div class="dot orange" style="right:30.4%;top:18%;"></div>
+            <div class="pill start" style="left:7%;bottom:18%;">起点 Start</div>
+            <div class="pill" style="right:17%;top:18%;">终点 End</div>
+            <div class="marker" data-marker style="right:34%;top:49%;">1</div>
+            <div class="marker-label" data-marker-label style="right:13%;top:48%;">干预 1 Intervention 1</div>
+          </div>
+          <div class="legend">
+            <span>○ 起点 Start</span>
+            <span>⚑ 终点 End</span>
+            <span><i class="line-key"></i>路线 Route</span>
+          </div>
+        </div>
+
+        <div class="panel result-panel">
+          <div class="panel-head"><strong>结果概览</strong><span>Results Overview</span></div>
+          <div class="metrics">
+            <div class="metric"><label>平均负荷</label><strong>0.68</strong><span>↑14.2%</span></div>
+            <div class="metric"><label>风险识别</label><strong>72%</strong><span>↑14.2%</span></div>
+            <div class="metric"><label>地标识别</label><strong>68%</strong><span>↑14.2%</span></div>
+            <div class="metric"><label>停下探测</label><strong>6.2</strong><span>↑14.2%</span></div>
+          </div>
+          <div class="chart">
+            <svg viewBox="0 0 780 250" role="img" aria-label="ACT-R load preview">
+              <rect width="780" height="250" fill="#f7f5f3"></rect>
+              <g stroke="#e3dedb" stroke-width="1">
+                <path d="M48 25H750M48 65H750M48 105H750M48 145H750M48 185H750M48 225H750"></path>
+                <path d="M48 25V225M165 25V225M282 25V225M399 25V225M516 25V225M633 25V225M750 25V225"></path>
+              </g>
+              <path d="M48 200L87 146L126 172L165 128L204 158L243 118L282 140L321 100L360 158L399 94L438 148L477 140L516 165L555 112L594 151L633 137L672 170L711 120L750 156" fill="none" stroke="#347dff" stroke-width="3"></path>
+              <path d="M48 188L87 204L126 172L165 205L204 159L243 212L282 166L321 202L360 136L399 211L438 173L477 195L516 162L555 215L594 170L633 194L672 154L711 202L750 196" fill="none" stroke="#9b7ce3" stroke-width="2"></path>
+              <g fill="#ff6a2a">
+                <circle cx="165" cy="128" r="4"></circle><circle cx="321" cy="100" r="4"></circle><circle cx="399" cy="94" r="4"></circle><circle cx="555" cy="112" r="4"></circle><circle cx="711" cy="120" r="4"></circle>
+              </g>
+              <text x="390" y="18" text-anchor="middle" font-size="12" fill="#333">BVI ACT-R Load Overview</text>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel settings">
+        <div class="setting-title">
+          <strong data-title-cn>障碍物检测</strong>
+          <span data-title-en>Obstacle Detection</span>
+        </div>
+        <div class="setting-subtitle" data-subtitle>范围、类别、概率、作用时间、反馈参数</div>
+
+        <div class="row wide"><span class="bullet"></span><div>提醒时机： <span data-trigger-name>障碍物</span></div></div>
+        <div class="row wide"><span class="bullet"></span><div data-simulator>障碍物识别范围模拟器</div></div>
+        <div class="row"><span></span><label>识别范围</label><input class="input" data-range value="默认" /><span></span></div>
+        <div class="row"><span></span><label>范围影响系数</label><input class="input" data-factor value="1.24" /><span></span></div>
+        <div class="row"><span></span><label>作用时长</label><input class="input" /><span></span></div>
+        <div class="row"><span></span><label>准备时长</label><input class="input" /><span></span></div>
+        <div class="row"><span class="bullet"></span><label>误报漏报概率</label><input class="input" /><span class="hint-text">0~1</span></div>
+        <div class="hint-text" data-note>触发概率 = 采集中触发的时间长度 / 总行走时间长度</div>
+
+        <div class="settings-section">
+          <h3>反馈参数</h3>
+          <div class="section-rule"></div>
+          <div class="row wide"><span class="bullet"></span><div>模态类型</div></div>
+          <div class="mode">
+            <button class="active" type="button">听觉</button>
+            <button type="button">触觉</button>
+            <button type="button">牵引力</button>
+          </div>
+          <div class="row" style="margin-top:24px;"><span class="bullet"></span><label>提醒时长</label><input class="input" value="0.2 s" /><span></span></div>
+          <div class="row"><span class="bullet"></span><label>提醒频率</label><input class="input" value="1 Hz" /><span></span></div>
+          <div class="row"><span class="bullet"></span><label>竞争系数</label><input class="input" /><span></span></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const presets = {
+      obstacle: {
+        cn: "障碍物检测", en: "Obstacle Detection", subtitle: "范围、类别、概率、作用时间、反馈参数",
+        trigger: "障碍物", simulator: "障碍物识别范围模拟器", range: "默认", factor: "1.24",
+        note: "触发概率 = 采集中触发的时间长度 / 总行走时间长度",
+        cards: ["障碍物范围触发", "障碍物类别概率触发", "盲杖外障碍触发", "误报/漏报触发", "反馈竞争触发"],
+        marker: "1", markerLabel: "干预 1 Intervention 1"
+      },
+      terrain: {
+        cn: "地势检测", en: "Terrain Detection", subtitle: "地面类型、概率、作用时间、反馈参数",
+        trigger: "地面类型", simulator: "地面类型触发模拟器", range: "路口 / 平整路面 / 盲道 / 不平整自然路面 / 坡度路面 / 高度落差路面", factor: "0.05",
+        note: "默认误报/漏报概率为 0.05；地势触发可对应 current_surface_type。",
+        cards: ["地面类型触发", "不平整自然路面触发", "坡度路面触发", "高度落差触发", "触觉反馈竞争触发"],
+        marker: "地", markerLabel: "地势提醒 Terrain Alert"
+      },
+      pedestrian: {
+        cn: "行人检测", en: "Pedestrian Detection", subtitle: "行人触发、识别范围、作用时间、反馈参数",
+        trigger: "行人（人音）", simulator: "行人触发模拟器", range: "默认", factor: "1.18",
+        note: "高人流场景可提高 HUMAN_ACTIVITY_PROB，形成连续行人触发。",
+        cards: ["行人触发", "人流密度触发", "行人范围影响触发", "误报/漏报触发", "听觉通道竞争触发"],
+        marker: "人", markerLabel: "行人提醒 Pedestrian Alert"
+      },
+      vehicle: {
+        cn: "车辆接近检测", en: "Vehicle Approach Detection", subtitle: "车辆触发、识别范围、作用时间、反馈参数",
+        trigger: "车辆接近", simulator: "车辆触发模拟器", range: "默认（借用车辆触发参数）", factor: "1.18",
+        note: "车辆接近可对应 vehicle_approach、horn、reverse_beep 等现有变量。",
+        cards: ["车辆接近触发", "喇叭触发", "倒车蜂鸣触发", "路口车辆触发", "高风险停探测触发"],
+        marker: "车", markerLabel: "车辆提醒 Vehicle Alert"
+      },
+      guidance: {
+        cn: "引导物检测", en: "Guidance Object Detection", subtitle: "引导物触发、识别范围、作用时间、反馈参数",
+        trigger: "引导物", simulator: "引导物触发模拟器", range: "默认", factor: "1.18",
+        note: "引导物可对应 tactile_guidance、curb、wall、railing、landmark 等参照。",
+        cards: ["盲道触发", "路缘触发", "墙/栏杆触发", "地标触发", "参照保持触发"],
+        marker: "引", markerLabel: "引导物提醒 Guidance Alert"
+      },
+      other: {
+        cn: "其他信息检测", en: "Other Information Detection", subtitle: "其他物体触发、概率、作用时间、反馈参数",
+        trigger: "其他信息", simulator: "其他物体触发模拟器", range: "默认", factor: "",
+        note: "预留给文本、标识、入口、POI 等非核心室外信息。",
+        cards: ["其他物体触发", "标识触发", "入口触发", "POI 触发", "信息竞争触发"],
+        marker: "信", markerLabel: "其他信息 Other Info"
+      }
+    };
+
+    function setPreset(key) {
+      const p = presets[key] || presets.obstacle;
+      document.querySelector("[data-title-cn]").textContent = p.cn;
+      document.querySelector("[data-title-en]").textContent = p.en;
+      document.querySelector("[data-subtitle]").textContent = p.subtitle;
+      document.querySelector("[data-trigger-name]").textContent = p.trigger;
+      document.querySelector("[data-simulator]").textContent = p.simulator;
+      document.querySelector("[data-range]").value = p.range;
+      document.querySelector("[data-factor]").value = p.factor;
+      document.querySelector("[data-note]").textContent = p.note;
+      document.querySelector("[data-marker]").textContent = p.marker;
+      document.querySelector("[data-marker-label]").textContent = p.markerLabel;
+      document.querySelectorAll("[data-trigger]").forEach((item, index) => {
+        item.textContent = p.cards[index] || "";
+      });
+    }
+
+    document.querySelectorAll(".function-list button").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".function-list button").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        setPreset(button.dataset.key);
+      });
+    });
+
+    document.querySelectorAll(".mode button").forEach((button) => {
+      button.addEventListener("click", () => {
+        button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>
