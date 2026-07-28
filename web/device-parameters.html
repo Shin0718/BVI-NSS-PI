@@ -661,21 +661,28 @@
     .settings.terrain-mode .generic-only { display: none; }
     .settings.terrain-mode .terrain-only { display: grid; }
 
+    .terrain-type-row {
+      align-items: start;
+    }
+
     .terrain-types {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 6px;
+      grid-column: 3 / 5;
     }
 
     .terrain-types button {
-      height: 30px;
+      min-height: 32px;
       border: 1px solid rgba(190,199,205,.38);
       background: rgba(15,17,19,.35);
       color: #cfd4d7;
-      padding: 0 10px;
-      font-size: 12px;
+      padding: 0 8px;
+      font-size: 11px;
       font-weight: 850;
       cursor: pointer;
+      white-space: normal;
+      line-height: 1.2;
     }
 
     .terrain-types button.active {
@@ -846,7 +853,7 @@
         <div class="setting-subtitle" data-subtitle>范围、类别、概率、作用时间、反馈参数</div>
 
         <div class="row wide"><span class="bullet"></span><div>提醒时机： <span data-trigger-name>障碍物</span></div></div>
-        <div class="row terrain-only"><span class="bullet"></span><label>地面类型</label><div class="terrain-types" data-terrain-types>
+        <div class="row terrain-only terrain-type-row"><span class="bullet"></span><label>地面类型</label><div class="terrain-types" data-terrain-types>
           <button class="active" type="button">路口</button>
           <button type="button">平整路面</button>
           <button type="button">盲道</button>
