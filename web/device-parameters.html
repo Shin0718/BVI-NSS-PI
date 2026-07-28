@@ -130,11 +130,11 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(205px, .78fr) minmax(154px, .55fr) minmax(540px, 2.45fr) minmax(360px, 1.32fr);
-      grid-template-rows: minmax(0, 1fr) 198px;
+      grid-template-columns: minmax(370px, 1.33fr) minmax(540px, 2.45fr) minmax(360px, 1.32fr);
+      grid-template-rows: minmax(0, 1fr) 172px;
       grid-template-areas:
-        "functions triggers map settings"
-        "results results chart settings";
+        "side map settings"
+        "results chart settings";
       gap: 12px;
       align-items: start;
       height: calc(100vh - 102px);
@@ -150,19 +150,27 @@
 
     .left-panel, .trigger-panel {
       padding: 14px;
-      height: auto;
+      height: 100%;
       min-height: 0;
       overflow: hidden;
     }
 
+    .side-stack {
+      grid-area: side;
+      display: grid;
+      grid-template-columns: minmax(0, 1.36fr) minmax(142px, .92fr);
+      gap: 12px;
+      height: 100%;
+      min-height: 0;
+    }
+
     .left-panel {
-      grid-area: functions;
+      grid-area: auto;
     }
 
     .trigger-panel {
-      grid-area: triggers;
       display: grid;
-      grid-template-rows: auto repeat(5, 68px);
+      grid-template-rows: auto repeat(5, minmax(0, 1fr));
       gap: 9px;
     }
 
@@ -183,11 +191,13 @@
 
     .function-list {
       display: grid;
+      grid-template-rows: repeat(6, minmax(0, 1fr));
       gap: 9px;
+      height: calc(100% - 34px);
     }
 
     .function-list button {
-      min-height: 58px;
+      min-height: 0;
       border: 0;
       border-radius: 8px;
       padding: 9px 12px;
@@ -404,12 +414,12 @@
 
     .metrics {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
+      grid-template-columns: repeat(4, minmax(0,1fr));
       gap: 9px;
     }
 
     .metric {
-      height: 58px;
+      height: 88px;
       border-radius: 6px;
       background: rgba(255,255,255,.16);
       padding: 7px 10px;
@@ -419,7 +429,7 @@
     }
 
     .metric label { color: #c9ced1; font-size: 11px; font-weight: 850; }
-    .metric strong { font-size: 24px; font-weight: 800; color: #fff; line-height: 1; }
+    .metric strong { font-size: 27px; font-weight: 800; color: #fff; line-height: 1; }
     .metric span { color: #72df67; font-size: 10px; font-weight: 900; }
 
     .chart-panel {
@@ -554,10 +564,11 @@
       .layout {
         grid-template-columns: minmax(178px, .62fr) minmax(510px, 1.75fr) minmax(340px, 1.05fr);
         grid-template-areas:
-          "functions map settings"
+          "side map settings"
           "results chart settings";
       }
       .trigger-panel { display: none; }
+      .side-stack { display: block; }
     }
 
     @media (max-width: 1120px) {
@@ -569,17 +580,18 @@
         grid-template-columns: 1fr;
         grid-template-rows: auto;
         grid-template-areas:
-          "functions"
-          "triggers"
+          "side"
           "map"
           "results"
           "chart"
           "settings";
         height: auto;
       }
-      .left-panel, .trigger-panel, .settings, .center { height: auto; overflow: visible; }
+      .side-stack, .left-panel, .trigger-panel, .settings, .center { height: auto; overflow: visible; }
       .function-list { height: auto; grid-template-rows: none; }
       .function-list button { min-height: 64px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .metric { height: 64px; }
       .map { height: 420px; }
     }
   </style>
@@ -603,26 +615,28 @@
     </header>
 
     <div class="layout">
-      <aside class="panel left-panel">
-        <div class="panel-head"><strong>产品功能</strong><span>function</span></div>
-        <nav class="function-list" aria-label="产品功能">
-          <button class="active" data-key="obstacle" type="button">障碍物检测<span>Obstacle Detection</span></button>
-          <button data-key="terrain" type="button">地势检测<span>Terrain Detection</span></button>
-          <button data-key="pedestrian" type="button">行人检测<span>Pedestrian Detection</span></button>
-          <button data-key="vehicle" type="button">车辆接近检测<span>Vehicle Approach Detection</span></button>
-          <button data-key="guidance" type="button">引导物检测<span>Guidance Object Detection</span></button>
-          <button data-key="other" type="button">其他信息检测<span>Other Information Detection</span></button>
-        </nav>
-      </aside>
+      <div class="side-stack">
+        <aside class="panel left-panel">
+          <div class="panel-head"><strong>产品功能</strong><span>function</span></div>
+          <nav class="function-list" aria-label="产品功能">
+            <button class="active" data-key="obstacle" type="button">障碍物检测<span>Obstacle Detection</span></button>
+            <button data-key="terrain" type="button">地势检测<span>Terrain Detection</span></button>
+            <button data-key="pedestrian" type="button">行人检测<span>Pedestrian Detection</span></button>
+            <button data-key="vehicle" type="button">车辆接近检测<span>Vehicle Approach Detection</span></button>
+            <button data-key="guidance" type="button">引导物检测<span>Guidance Object Detection</span></button>
+            <button data-key="other" type="button">其他信息检测<span>Other Information Detection</span></button>
+          </nav>
+        </aside>
 
-      <aside class="panel trigger-panel">
-        <div class="panel-head"><strong>触发条件</strong><span>trigger</span></div>
-        <div class="trigger-card" data-trigger="0">障碍物范围触发</div>
-        <div class="trigger-card" data-trigger="1">障碍物类别概率触发</div>
-        <div class="trigger-card" data-trigger="2">盲杖外障碍触发</div>
-        <div class="trigger-card" data-trigger="3">误报/漏报触发</div>
-        <div class="trigger-card" data-trigger="4">反馈竞争触发</div>
-      </aside>
+        <aside class="panel trigger-panel">
+          <div class="panel-head"><strong>触发条件</strong><span>trigger</span></div>
+          <div class="trigger-card" data-trigger="0">障碍物范围触发</div>
+          <div class="trigger-card" data-trigger="1">障碍物类别概率触发</div>
+          <div class="trigger-card" data-trigger="2">盲杖外障碍触发</div>
+          <div class="trigger-card" data-trigger="3">误报/漏报触发</div>
+          <div class="trigger-card" data-trigger="4">反馈竞争触发</div>
+        </aside>
+      </div>
 
       <section class="center">
         <div class="panel map-panel">
