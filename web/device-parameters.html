@@ -953,25 +953,36 @@
       const label = kind === "function"
         ? source.childNodes[0].textContent.trim()
         : source.textContent.trim();
-      return JSON.stringify({
+      return {
         kind,
         key: source.dataset.key || source.dataset.trigger || "",
         label
-      });
+      };
     }
+
+    let currentDragPayload = null;
 
     document.querySelectorAll('[draggable="true"]').forEach((source) => {
       source.addEventListener("dragstart", (event) => {
+        currentDragPayload = dragPayloadFrom(source);
         source.classList.add("dragging");
         event.dataTransfer.effectAllowed = "copy";
-        event.dataTransfer.setData("application/json", dragPayloadFrom(source));
+        const serialized = JSON.stringify(currentDragPayload);
+        event.dataTransfer.setData("text/plain", serialized);
+        event.dataTransfer.setData("application/json", serialized);
       });
       source.addEventListener("dragend", () => {
         source.classList.remove("dragging");
+        currentDragPayload = null;
       });
     });
 
     document.querySelectorAll(".drop-zone").forEach((zone) => {
+      zone.addEventListener("dragenter", (event) => {
+        event.preventDefault();
+        zone.classList.add("is-over");
+        event.dataTransfer.dropEffect = "copy";
+      });
       zone.addEventListener("dragover", (event) => {
         event.preventDefault();
         zone.classList.add("is-over");
@@ -982,10 +993,11 @@
       });
       zone.addEventListener("drop", (event) => {
         event.preventDefault();
+        event.stopPropagation();
         zone.classList.remove("is-over");
-        const raw = event.dataTransfer.getData("application/json");
-        if (!raw) return;
-        const payload = JSON.parse(raw);
+        const raw = event.dataTransfer.getData("text/plain") || event.dataTransfer.getData("application/json");
+        const payload = raw ? JSON.parse(raw) : currentDragPayload;
+        if (!payload) return;
         if (payload.kind !== zone.dataset.kind) return;
         zone.dataset.value = payload.key;
         zone.dataset.label = payload.label;
