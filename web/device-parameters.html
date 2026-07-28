@@ -170,7 +170,7 @@
 
     .trigger-panel {
       display: grid;
-      grid-template-rows: auto repeat(5, minmax(0, 1fr));
+      grid-template-rows: auto repeat(6, minmax(0, 1fr));
       gap: 9px;
     }
 
@@ -722,6 +722,7 @@
           <div class="trigger-card" data-trigger="2" data-kind="trigger" draggable="true">盲杖外障碍触发</div>
           <div class="trigger-card" data-trigger="3" data-kind="trigger" draggable="true">误报/漏报触发</div>
           <div class="trigger-card" data-trigger="4" data-kind="trigger" draggable="true">反馈竞争触发</div>
+          <div class="trigger-card" data-trigger="5" data-kind="trigger" draggable="true">无</div>
         </aside>
       </div>
 
@@ -839,37 +840,37 @@
         cn: "障碍物检测", en: "Obstacle Detection", subtitle: "范围、类别、概率、作用时间、反馈参数",
         trigger: "障碍物", simulator: "障碍物识别范围模拟器", range: "默认", factor: "1.24",
         note: "触发概率 = 采集中触发的时间长度 / 总行走时间长度",
-        cards: ["障碍物范围触发", "障碍物类别概率触发", "盲杖外障碍触发", "误报/漏报触发", "反馈竞争触发"]
+        cards: ["障碍物范围触发", "障碍物类别概率触发", "盲杖外障碍触发", "误报/漏报触发", "反馈竞争触发", "无"]
       },
       terrain: {
         cn: "地势检测", en: "Terrain Detection", subtitle: "地面类型、概率、作用时间、反馈参数",
         trigger: "地面类型", simulator: "地面类型触发模拟器", range: "路口 / 平整路面 / 盲道 / 不平整自然路面 / 坡度路面 / 高度落差路面", factor: "0.05",
         note: "默认误报/漏报概率为 0.05；地势触发可对应 current_surface_type。",
-        cards: ["地面类型触发", "不平整自然路面触发", "坡度路面触发", "高度落差触发", "触觉反馈竞争触发"]
+        cards: ["地面类型触发", "不平整自然路面触发", "坡度路面触发", "高度落差触发", "触觉反馈竞争触发", "无"]
       },
       pedestrian: {
         cn: "行人检测", en: "Pedestrian Detection", subtitle: "行人触发、识别范围、作用时间、反馈参数",
         trigger: "行人（人音）", simulator: "行人触发模拟器", range: "默认", factor: "1.18",
         note: "高人流场景可提高 HUMAN_ACTIVITY_PROB，形成连续行人触发。",
-        cards: ["行人触发", "人流密度触发", "行人范围影响触发", "误报/漏报触发", "听觉通道竞争触发"]
+        cards: ["行人触发", "人流密度触发", "行人范围影响触发", "误报/漏报触发", "听觉通道竞争触发", "无"]
       },
       vehicle: {
         cn: "车辆接近检测", en: "Vehicle Approach Detection", subtitle: "车辆触发、识别范围、作用时间、反馈参数",
         trigger: "车辆接近", simulator: "车辆触发模拟器", range: "默认（借用车辆触发参数）", factor: "1.18",
         note: "车辆接近可对应 vehicle_approach、horn、reverse_beep 等现有变量。",
-        cards: ["车辆接近触发", "喇叭触发", "倒车蜂鸣触发", "路口车辆触发", "高风险停探测触发"]
+        cards: ["车辆接近触发", "喇叭触发", "倒车蜂鸣触发", "路口车辆触发", "高风险停探测触发", "无"]
       },
       guidance: {
         cn: "引导物检测", en: "Guidance Object Detection", subtitle: "引导物触发、识别范围、作用时间、反馈参数",
         trigger: "引导物", simulator: "引导物触发模拟器", range: "默认", factor: "1.18",
         note: "引导物可对应 tactile_guidance、curb、wall、railing、landmark 等参照。",
-        cards: ["盲道触发", "路缘触发", "墙/栏杆触发", "地标触发", "参照保持触发"]
+        cards: ["盲道触发", "路缘触发", "墙/栏杆触发", "地标触发", "参照保持触发", "无"]
       },
       other: {
         cn: "其他信息检测", en: "Other Information Detection", subtitle: "其他物体触发、概率、作用时间、反馈参数",
         trigger: "其他信息", simulator: "其他物体触发模拟器", range: "默认", factor: "",
         note: "预留给文本、标识、入口、POI 等非核心室外信息。",
-        cards: ["其他物体触发", "标识触发", "入口触发", "POI 触发", "信息竞争触发"]
+        cards: ["其他物体触发", "标识触发", "入口触发", "POI 触发", "信息竞争触发", "无"]
       }
     };
 
