@@ -210,6 +210,17 @@
       cursor: pointer;
     }
 
+    .function-list button[draggable="true"],
+    .trigger-card[draggable="true"] {
+      cursor: grab;
+      user-select: none;
+    }
+
+    .function-list button.dragging,
+    .trigger-card.dragging {
+      opacity: .58;
+    }
+
     .function-list button span {
       display: block;
       color: #b9bec2;
@@ -428,6 +439,59 @@
       font-size: 13px;
       font-weight: 900;
       z-index: 7;
+    }
+
+    .drop-zone {
+      position: absolute;
+      width: clamp(78px, 7.8vw, 104px);
+      height: clamp(28px, 2.6vw, 34px);
+      border: 1px dashed rgba(255,255,255,.42);
+      border-radius: 8px;
+      background: rgba(255,255,255,.13);
+      backdrop-filter: blur(2px);
+      color: rgba(255,255,255,.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+      font-size: clamp(9px, .62vw, 11px);
+      font-weight: 850;
+      text-align: center;
+      z-index: 9;
+      transition: background .16s ease, border-color .16s ease, transform .16s ease;
+    }
+
+    .drop-zone[data-kind="function"] { border-color: rgba(52,125,255,.62); }
+    .drop-zone[data-kind="trigger"] { border-color: rgba(255,106,42,.68); }
+
+    .drop-zone.is-over {
+      background: rgba(255,255,255,.25);
+      border-color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .drop-zone.filled {
+      border-style: solid;
+      background: rgba(17,19,21,.66);
+      color: #fff;
+    }
+
+    .drop-zone.filled[data-kind="function"] {
+      border-color: var(--blue);
+      box-shadow: inset 3px 0 0 var(--blue);
+    }
+
+    .drop-zone.filled[data-kind="trigger"] {
+      border-color: var(--accent);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .drop-zone span {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .legend {
@@ -673,22 +737,22 @@
         <aside class="panel left-panel">
           <div class="panel-head"><strong>产品功能</strong><span>function</span></div>
           <nav class="function-list" aria-label="产品功能">
-            <button class="active" data-key="obstacle" type="button">障碍物检测<span>Obstacle Detection</span></button>
-            <button data-key="terrain" type="button">地势检测<span>Terrain Detection</span></button>
-            <button data-key="pedestrian" type="button">行人检测<span>Pedestrian Detection</span></button>
-            <button data-key="vehicle" type="button">车辆接近检测<span>Vehicle Approach Detection</span></button>
-            <button data-key="guidance" type="button">引导物检测<span>Guidance Object Detection</span></button>
-            <button data-key="other" type="button">其他信息检测<span>Other Information Detection</span></button>
+            <button class="active" data-key="obstacle" data-kind="function" draggable="true" type="button">障碍物检测<span>Obstacle Detection</span></button>
+            <button data-key="terrain" data-kind="function" draggable="true" type="button">地势检测<span>Terrain Detection</span></button>
+            <button data-key="pedestrian" data-kind="function" draggable="true" type="button">行人检测<span>Pedestrian Detection</span></button>
+            <button data-key="vehicle" data-kind="function" draggable="true" type="button">车辆接近检测<span>Vehicle Approach Detection</span></button>
+            <button data-key="guidance" data-kind="function" draggable="true" type="button">引导物检测<span>Guidance Object Detection</span></button>
+            <button data-key="other" data-kind="function" draggable="true" type="button">其他信息检测<span>Other Information Detection</span></button>
           </nav>
         </aside>
 
         <aside class="panel trigger-panel">
           <div class="panel-head"><strong>触发条件</strong><span>trigger</span></div>
-          <div class="trigger-card" data-trigger="0">障碍物范围触发</div>
-          <div class="trigger-card" data-trigger="1">障碍物类别概率触发</div>
-          <div class="trigger-card" data-trigger="2">盲杖外障碍触发</div>
-          <div class="trigger-card" data-trigger="3">误报/漏报触发</div>
-          <div class="trigger-card" data-trigger="4">反馈竞争触发</div>
+          <div class="trigger-card" data-trigger="0" data-kind="trigger" draggable="true">障碍物范围触发</div>
+          <div class="trigger-card" data-trigger="1" data-kind="trigger" draggable="true">障碍物类别概率触发</div>
+          <div class="trigger-card" data-trigger="2" data-kind="trigger" draggable="true">盲杖外障碍触发</div>
+          <div class="trigger-card" data-trigger="3" data-kind="trigger" draggable="true">误报/漏报触发</div>
+          <div class="trigger-card" data-trigger="4" data-kind="trigger" draggable="true">反馈竞争触发</div>
         </aside>
       </div>
 
@@ -721,6 +785,14 @@
             <i class="route-arrow vertical"></i>
             <i class="route-arrow vertical delay-1"></i>
             <i class="route-arrow vertical delay-2"></i>
+            <div class="drop-zone" data-slot="start-road" data-kind="function" style="left:20%;bottom:22%;"><span>功能</span></div>
+            <div class="drop-zone" data-slot="start-road" data-kind="trigger" style="left:20%;bottom:14%;"><span>触发</span></div>
+            <div class="drop-zone" data-slot="mid-road" data-kind="function" style="left:43%;bottom:22%;"><span>功能</span></div>
+            <div class="drop-zone" data-slot="mid-road" data-kind="trigger" style="left:43%;bottom:14%;"><span>触发</span></div>
+            <div class="drop-zone" data-slot="turn-crossing" data-kind="function" style="right:29%;bottom:22%;"><span>功能</span></div>
+            <div class="drop-zone" data-slot="turn-crossing" data-kind="trigger" style="right:29%;bottom:14%;"><span>触发</span></div>
+            <div class="drop-zone" data-slot="end-crossing" data-kind="function" style="right:22%;top:39%;"><span>功能</span></div>
+            <div class="drop-zone" data-slot="end-crossing" data-kind="trigger" style="right:22%;top:47%;"><span>触发</span></div>
             <div class="dot" style="left:12%;bottom:15%;"></div>
             <div class="dot orange" style="right:29%;top:32%;"></div>
             <div class="dot orange" style="right:30.4%;top:18%;"></div>
@@ -873,6 +945,58 @@
       button.addEventListener("click", () => {
         button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
         button.classList.add("active");
+      });
+    });
+
+    function dragPayloadFrom(source) {
+      const kind = source.dataset.kind;
+      const label = kind === "function"
+        ? source.childNodes[0].textContent.trim()
+        : source.textContent.trim();
+      return JSON.stringify({
+        kind,
+        key: source.dataset.key || source.dataset.trigger || "",
+        label
+      });
+    }
+
+    document.querySelectorAll('[draggable="true"]').forEach((source) => {
+      source.addEventListener("dragstart", (event) => {
+        source.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "copy";
+        event.dataTransfer.setData("application/json", dragPayloadFrom(source));
+      });
+      source.addEventListener("dragend", () => {
+        source.classList.remove("dragging");
+      });
+    });
+
+    document.querySelectorAll(".drop-zone").forEach((zone) => {
+      zone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        zone.classList.add("is-over");
+        event.dataTransfer.dropEffect = "copy";
+      });
+      zone.addEventListener("dragleave", () => {
+        zone.classList.remove("is-over");
+      });
+      zone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        zone.classList.remove("is-over");
+        const raw = event.dataTransfer.getData("application/json");
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+        if (payload.kind !== zone.dataset.kind) return;
+        zone.dataset.value = payload.key;
+        zone.dataset.label = payload.label;
+        zone.classList.add("filled");
+        zone.querySelector("span").textContent = payload.label;
+      });
+      zone.addEventListener("click", () => {
+        delete zone.dataset.value;
+        delete zone.dataset.label;
+        zone.classList.remove("filled");
+        zone.querySelector("span").textContent = zone.dataset.kind === "function" ? "功能" : "触发";
       });
     });
   </script>
