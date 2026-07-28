@@ -656,6 +656,34 @@
       color: #fff;
     }
 
+    .terrain-only { display: none; }
+
+    .settings.terrain-mode .generic-only { display: none; }
+    .settings.terrain-mode .terrain-only { display: grid; }
+
+    .terrain-types {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .terrain-types button {
+      height: 30px;
+      border: 1px solid rgba(190,199,205,.38);
+      background: rgba(15,17,19,.35);
+      color: #cfd4d7;
+      padding: 0 10px;
+      font-size: 12px;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    .terrain-types button.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
     @media (max-width: 1380px) {
       .layout {
         grid-template-columns: minmax(178px, .62fr) minmax(510px, 1.75fr) minmax(340px, 1.05fr);
@@ -818,14 +846,22 @@
         <div class="setting-subtitle" data-subtitle>范围、类别、概率、作用时间、反馈参数</div>
 
         <div class="row wide"><span class="bullet"></span><div>提醒时机： <span data-trigger-name>障碍物</span></div></div>
-        <div class="row wide"><span class="bullet"></span><div data-simulator>障碍物识别范围模拟器</div></div>
-        <div class="row"><span></span><label>识别范围</label><div class="static-value" data-range>默认</div><span></span></div>
-        <div class="row"><span></span><label>范围影响系数</label><input class="input" data-factor value="1.24" /><span></span></div>
+        <div class="row terrain-only"><span class="bullet"></span><label>地面类型</label><div class="terrain-types" data-terrain-types>
+          <button class="active" type="button">路口</button>
+          <button type="button">平整路面</button>
+          <button type="button">盲道</button>
+          <button type="button">不平整自然路面</button>
+          <button type="button">坡度路面</button>
+          <button type="button">高度落差路面</button>
+        </div><span></span></div>
+        <div class="row wide generic-only"><span class="bullet"></span><div data-simulator>障碍物识别范围模拟器</div></div>
+        <div class="row generic-only"><span></span><label>识别范围</label><div class="static-value" data-range>默认</div><span></span></div>
+        <div class="row generic-only"><span></span><label>范围影响系数</label><input class="input" data-factor value="1.24" /><span></span></div>
         <div class="row"><span></span><label>作用时长</label><input class="input" /><span></span></div>
         <div class="row"><span></span><label>准备时长</label><input class="input" /><span></span></div>
-        <div class="row wide"><span class="bullet"></span><div data-category-simulator>障碍物类别触发模拟器（除盲杖外）</div></div>
-        <div class="row"><span></span><label>模拟概率</label><input class="input" /><span class="hint-text">0~1</span></div>
-        <div class="hint-text">触发概率 = 采集中触发的时间长度 / 总行走时间长度</div>
+        <div class="row wide generic-only"><span class="bullet"></span><div data-category-simulator>障碍物类别触发模拟器（除盲杖外）</div></div>
+        <div class="row generic-only"><span></span><label>模拟概率</label><input class="input" /><span class="hint-text">0~1</span></div>
+        <div class="hint-text generic-only">触发概率 = 采集中触发的时间长度 / 总行走时间长度</div>
         <div class="row"><span class="bullet"></span><label>误报漏报概率</label><input class="input" /><span class="hint-text">0~1</span></div>
         <div class="hint-text" data-note>触发概率 = 采集中触发的时间长度 / 总行走时间长度</div>
 
@@ -859,7 +895,7 @@
         cn: "地势检测", en: "Terrain Detection", subtitle: "地面类型、概率、作用时间、反馈参数",
         trigger: "地面类型", simulator: "地面类型触发模拟器", range: "路口 / 平整路面 / 盲道 / 不平整自然路面 / 坡度路面 / 高度落差路面", factor: "0.05",
         categorySimulator: "地面类型概率触发模拟器",
-        note: "默认误报/漏报概率为 0.05；地势触发可对应 current_surface_type。",
+        note: "默认误报/漏报概率为 0.05",
         cards: ["地面类型触发", "不平整自然路面触发", "坡度路面触发", "高度落差触发", "触觉反馈竞争触发", "无"]
       },
       pedestrian: {
@@ -894,6 +930,7 @@
 
     function setPreset(key) {
       const p = presets[key] || presets.obstacle;
+      document.querySelector(".settings").classList.toggle("terrain-mode", key === "terrain");
       document.querySelector("[data-title-cn]").textContent = p.cn;
       document.querySelector("[data-title-en]").textContent = p.en;
       document.querySelector("[data-subtitle]").textContent = p.subtitle;
@@ -917,6 +954,13 @@
     });
 
     document.querySelectorAll(".mode button").forEach((button) => {
+      button.addEventListener("click", () => {
+        button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+      });
+    });
+
+    document.querySelectorAll(".terrain-types button").forEach((button) => {
       button.addEventListener("click", () => {
         button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
         button.classList.add("active");
