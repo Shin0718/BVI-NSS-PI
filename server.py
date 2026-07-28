@@ -335,7 +335,7 @@ def _derive_model_overrides(payload):
     _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", 0.00574 * vehicle_factor * crossing_factor * traffic_factor)
     _set_override(overrides, "SOUND_HORN_PROB", 0.000167 * traffic_factor * vehicle_factor)
     _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", 0.000251 * traffic_factor * vehicle_factor)
-    _set_override(overrides, "SOUND_HUMAN_ACTIVITY_PROB", 0.01036 * crowd_factor)
+    _set_override(overrides, "HUMAN_ACTIVITY_PROB", 0.01036 * crowd_factor)
     _set_override(overrides, "CROSSING_HORN_PROB", 0.00313 * crossing_factor * traffic_factor)
     _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", 0.02402 * crossing_factor * crowd_factor)
 

@@ -30,7 +30,7 @@ try:
         SOUND_VEHICLE_APPROACH_PROB,
         SOUND_VEHICLE_APPROACH_CROSSING_PROB,
         SOUND_REVERSE_BEEP_PROB,
-        SOUND_HUMAN_ACTIVITY_PROB,
+        HUMAN_ACTIVITY_PROB,
         VEHICLE_APPROACH_MIN_STEPS,
         VEHICLE_APPROACH_MAX_STEPS,
         VEHICLE_APPROACH_SALIENCE_GATE_SIDEWALK,
@@ -111,7 +111,7 @@ except ImportError:
         SOUND_VEHICLE_APPROACH_PROB,
         SOUND_VEHICLE_APPROACH_CROSSING_PROB,
         SOUND_REVERSE_BEEP_PROB,
-        SOUND_HUMAN_ACTIVITY_PROB,
+        HUMAN_ACTIVITY_PROB,
         VEHICLE_APPROACH_MIN_STEPS,
         VEHICLE_APPROACH_MAX_STEPS,
         VEHICLE_APPROACH_SALIENCE_GATE_SIDEWALK,
@@ -384,7 +384,7 @@ def _sample_surface_segment_steps(surface_type):
 
 
 def _dominant_sound_type(
-    snd_vehicle_approach, snd_horn, snd_reverse_beep, snd_human_activity
+    snd_vehicle_approach, snd_horn, snd_reverse_beep, human_activity_triggered
 ):
     """Handle dominant sound type behavior."""
     return (
@@ -396,7 +396,7 @@ def _dominant_sound_type(
             else (
                 "reverse_beep"
                 if snd_reverse_beep
-                else "human_activity" if snd_human_activity else "none"
+                else "human_activity" if human_activity_triggered else "none"
             )
         )
     )
@@ -447,7 +447,7 @@ def _build_dbn_evidence(
     crossing_active,
     vehicle_approach,
     traffic_sound,
-    human_voice,
+    human_activity,
     sound_salience,
     surface_change,
     current_surface_type,
@@ -470,7 +470,7 @@ def _build_dbn_evidence(
         return {
             "traffic_sound": traffic_evidence,
             "vehicle_approach": vehicle_evidence,
-            "human_voice": human_voice,
+            "human_activity": human_activity,
             "sound_salience": sound_salience,
             "cane_hit": DBN_CROSSING_CANE_HIT_SOFT_EVIDENCE,
             "surface_change": surface_change,
@@ -484,7 +484,7 @@ def _build_dbn_evidence(
         return {
             "traffic_sound": traffic_sound,
             "vehicle_approach": True,
-            "human_voice": human_voice,
+            "human_activity": human_activity,
             "sound_salience": sound_salience,
             "surface_change": surface_change,
             "distance_feedback": DBN_NEUTRAL_DISTANCE_FEEDBACK,
@@ -496,7 +496,7 @@ def _build_dbn_evidence(
     return {
         "traffic_sound": traffic_sound,
         "vehicle_approach": vehicle_approach,
-        "human_voice": human_voice,
+        "human_activity": human_activity,
         "sound_salience": sound_salience,
         "cane_hit": cane_hit,
         "surface_change": surface_change,
@@ -1011,7 +1011,7 @@ def run_simulation(familiarity_level=1):
 
         snd_horn = random.random() < SOUND_HORN_PROB
         snd_reverse_beep = random.random() < SOUND_REVERSE_BEEP_PROB
-        snd_human_activity = random.random() < SOUND_HUMAN_ACTIVITY_PROB
+        human_activity_triggered = random.random() < HUMAN_ACTIVITY_PROB
 
         if _veh_approach_remaining > 0:
             _veh_approach_remaining -= 1
@@ -1035,13 +1035,13 @@ def run_simulation(familiarity_level=1):
                 snd_vehicle_approach = False
         traffic_sound = snd_horn or snd_vehicle_approach or snd_reverse_beep
         vehicle_approach = snd_vehicle_approach
-        human_voice = snd_human_activity
-        sound_level = 1 if (traffic_sound or human_voice) else 0
+        human_activity = human_activity_triggered
+        sound_level = 1 if (traffic_sound or human_activity) else 0
         dominant_sound_type = _dominant_sound_type(
             snd_vehicle_approach,
             snd_horn,
             snd_reverse_beep,
-            snd_human_activity,
+            human_activity_triggered,
         )
 
         _on_crossing = crossing_active
@@ -1107,8 +1107,8 @@ def run_simulation(familiarity_level=1):
 
         if prev_action == "stop_and_probe" and not crossing_active:
             snd_reverse_beep = False
-            snd_human_activity = False
-            human_voice = False
+            human_activity_triggered = False
+            human_activity = False
             traffic_sound = snd_horn or snd_vehicle_approach
             sound_level = 1 if traffic_sound else 0
             dominant_sound_type = _dominant_sound_type(
@@ -1135,16 +1135,16 @@ def run_simulation(familiarity_level=1):
                 random.random() < SOUND_VEHICLE_APPROACH_CROSSING_PROB
             )
             snd_reverse_beep = random.random() < CROSSING_REVERSE_BEEP_PROB
-            snd_human_activity = random.random() < CROSSING_HUMAN_ACTIVITY_PROB
+            human_activity_triggered = random.random() < CROSSING_HUMAN_ACTIVITY_PROB
             traffic_sound = snd_horn or snd_vehicle_approach or snd_reverse_beep
             vehicle_approach = snd_vehicle_approach
-            human_voice = snd_human_activity
-            sound_level = 1 if (traffic_sound or human_voice) else 0
+            human_activity = human_activity_triggered
+            sound_level = 1 if (traffic_sound or human_activity) else 0
             dominant_sound_type = _dominant_sound_type(
                 snd_vehicle_approach,
                 snd_horn,
                 snd_reverse_beep,
-                snd_human_activity,
+                human_activity_triggered,
             )
             print(
                 f"[路口感知覆盖] subphase={crossing_subphase}, "
@@ -1209,12 +1209,12 @@ def run_simulation(familiarity_level=1):
                 snd_vehicle_approach = False
                 vehicle_approach = False
                 traffic_sound = snd_horn or snd_vehicle_approach or snd_reverse_beep
-                sound_level = 1 if (traffic_sound or human_voice) else 0
+                sound_level = 1 if (traffic_sound or human_activity) else 0
                 dominant_sound_type = _dominant_sound_type(
                     snd_vehicle_approach,
                     snd_horn,
                     snd_reverse_beep,
-                    snd_human_activity,
+                    human_activity_triggered,
                 )
                 looming_boost = round(looming_boost * LOOMING_BOOST_DECAY, 4)
 
@@ -1222,7 +1222,7 @@ def run_simulation(familiarity_level=1):
             crossing_active=crossing_active,
             vehicle_approach=vehicle_approach,
             traffic_sound=traffic_sound,
-            human_voice=human_voice,
+            human_activity=human_activity,
             sound_salience=sound_salience,
             surface_change=surface_change,
             current_surface_type=current_surface_type,
@@ -1243,7 +1243,7 @@ def run_simulation(familiarity_level=1):
         sal_novelty_aud = clamp(max(0.0, change_rate) + burst_bonus + looming_boost)
         sal_discriminability_aud = clamp(
             0.65 * float(dominant_sound_type != "none")
-            + 0.20 * float(traffic_sound or human_voice)
+            + 0.20 * float(traffic_sound or human_activity)
             + 0.15 * float(sound_level == 1)
         )
         sal_tactile_diff_aud = 0.0
@@ -1562,7 +1562,7 @@ def run_simulation(familiarity_level=1):
         aural_event_peak = 0.08
         if traffic_sound and not vehicle_approach:
             aural_event_peak = max(aural_event_peak, 0.22)
-        if human_voice:
+        if human_activity:
             aural_event_peak = max(aural_event_peak, 0.33)
         aural_event_peak = clamp(
             aural_event_peak + 0.18 * sound_salience, low=0.05, high=0.75
@@ -2174,13 +2174,13 @@ def run_simulation(familiarity_level=1):
             "snd_horn": snd_horn,
             "snd_vehicle_approach": snd_vehicle_approach,
             "snd_reverse_beep": snd_reverse_beep,
-            "snd_human_activity": snd_human_activity,
+            "human_activity_triggered": human_activity_triggered,
             "traffic_sound": traffic_sound,
             "vehicle_approach": vehicle_approach,
             "vehicle_approach_raw": vehicle_approach_raw,
             "sound_salience": round(sound_salience, 4),
             "retrieval_wm_load": round(retrieval_wm_load, 4),
-            "human_voice": human_voice,
+            "human_activity": human_activity,
             "cane_hit": _dbn_cane_hit,
             "cane_hit_raw": cane_hit,
             "surface_change": surface_change,

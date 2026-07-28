@@ -14,7 +14,7 @@ EXPERT_CPT = {
     },
     "traffic_sound": {"low": 0.48, "medium": 0.54, "high": 0.60},
     "vehicle_approach": {"low": 0.30, "medium": 0.46, "high": 0.62},
-    "human_voice": {"low": 0.52, "medium": 0.50, "high": 0.35},
+    "human_activity": {"low": 0.52, "medium": 0.50, "high": 0.35},
     "cane_hit": {"low": 0.28, "medium": 0.56, "high": 0.44},
     "cane_drop": {"low": 0.26, "medium": 0.32, "high": 0.42},
     "surface_change": {"low": 0.44, "medium": 0.48, "high": 0.52},
@@ -94,7 +94,7 @@ def infer_risk_posterior(prev_risk_posterior, evidence, model=None):
         for var_name in (
             "traffic_sound",
             "vehicle_approach",
-            "human_voice",
+            "human_activity",
             "cane_hit",
             "cane_drop",
             "surface_change",
