@@ -273,7 +273,7 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       background: var(--surface-2);
       border: 1px solid var(--line);
       border-radius: 12px 12px 0 0;
@@ -537,6 +537,529 @@
       background: #fafafa;
     }
 
+    .device-designer {
+      background: #121517;
+      border-radius: 12px;
+      padding: 18px;
+      color: #e6e8ea;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+
+    .designer-shell {
+      display: grid;
+      grid-template-columns: minmax(230px, .75fr) minmax(156px, .5fr) minmax(560px, 2.1fr);
+      gap: 14px;
+      align-items: stretch;
+      min-height: 520px;
+    }
+
+    .designer-panel {
+      background: rgba(49, 56, 60, .94);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      box-shadow: 0 18px 44px rgba(0,0,0,.28);
+    }
+
+    .designer-side,
+    .designer-trigger {
+      padding: 16px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .designer-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      color: #fff;
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .designer-head span {
+      color: #c0c5c8;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .designer-functions {
+      display: grid;
+      grid-template-rows: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .designer-function,
+    .designer-trigger-card {
+      border: 0;
+      cursor: grab;
+      user-select: none;
+      font-weight: 900;
+    }
+
+    .designer-function {
+      min-height: 0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.08);
+      color: #dde1e3;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.25;
+    }
+
+    .designer-function span {
+      display: block;
+      color: #bfc5c8;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .designer-function.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .designer-function.active span {
+      color: #fff;
+    }
+
+    .designer-trigger {
+      grid-template-rows: auto repeat(6, minmax(0, 1fr));
+    }
+
+    .designer-trigger-card {
+      min-height: 0;
+      border-radius: 10px;
+      background: #eceeef;
+      color: #323638;
+      display: grid;
+      place-items: center;
+      padding: 10px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .designer-function.dragging,
+    .designer-trigger-card.dragging {
+      opacity: .56;
+    }
+
+    .designer-map-panel {
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 52px minmax(0, 1fr) 38px;
+      min-height: 0;
+    }
+
+    .designer-scenario-title {
+      padding: 0 18px;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .designer-scenario-title span {
+      color: #c0c5c8;
+      font-size: 15px;
+    }
+
+    .designer-info {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #c0c5c8;
+      color: #c0c5c8;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+    }
+
+    .designer-map {
+      position: relative;
+      background: #4e5051;
+      overflow: hidden;
+      min-height: 430px;
+    }
+
+    .designer-road-v { position: absolute; left: 38%; top: 0; width: 26%; height: 100%; background: #4e5051; }
+    .designer-road-h { position: absolute; left: 0; top: 34%; width: 100%; height: 30%; background: #4e5051; }
+    .designer-road-spur { position: absolute; left: 65%; top: 36%; width: 10%; height: 44%; background: #c8c2b6; }
+    .designer-block { position: absolute; background: #c8c2b6; }
+
+    .designer-crosswalk-v,
+    .designer-crosswalk-h {
+      position: absolute;
+      display: grid;
+      z-index: 3;
+    }
+
+    .designer-crosswalk-v {
+      grid-template-columns: repeat(4, clamp(18px, 2vw, 28px));
+      gap: 7px;
+    }
+
+    .designer-crosswalk-h {
+      grid-template-rows: repeat(3, clamp(13px, 1.35vw, 18px));
+      gap: 7px;
+    }
+
+    .designer-crosswalk-v i,
+    .designer-crosswalk-h i {
+      display: block;
+      background: #e8e7e0;
+    }
+
+    .designer-crosswalk-v i { height: clamp(36px, 5vw, 56px); }
+    .designer-crosswalk-h i { width: clamp(86px, 8vw, 112px); }
+
+    .designer-route {
+      position: absolute;
+      left: 14%;
+      bottom: 17%;
+      width: 56%;
+      height: 28%;
+      border-bottom: 8px solid #347dff;
+      border-right: 8px solid #347dff;
+      border-radius: 0 0 34px 0;
+      z-index: 5;
+    }
+
+    .designer-route::after {
+      content: "";
+      position: absolute;
+      right: -8px;
+      top: -90%;
+      height: 94%;
+      border-right: 8px solid #347dff;
+    }
+
+    .designer-route-arrow {
+      position: absolute;
+      width: 0;
+      height: 0;
+      z-index: 8;
+      pointer-events: none;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.26));
+    }
+
+    .designer-route-arrow.horizontal {
+      left: 17%;
+      bottom: calc(17% - 5px);
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-left: 15px solid #fff;
+      animation: designerRouteArrowHorizontal 3.2s linear infinite;
+    }
+
+    .designer-route-arrow.vertical {
+      right: calc(30% - 5px);
+      bottom: 21%;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 15px solid #fff;
+      animation: designerRouteArrowVertical 3.2s linear infinite;
+    }
+
+    .designer-route-arrow.delay-1 { animation-delay: 1.05s; opacity: .7; }
+    .designer-route-arrow.delay-2 { animation-delay: 2.1s; opacity: .45; }
+
+    @keyframes designerRouteArrowHorizontal {
+      0% { left: 17%; opacity: 0; }
+      12%, 88% { opacity: 1; }
+      100% { left: 67%; opacity: 0; }
+    }
+
+    @keyframes designerRouteArrowVertical {
+      0% { bottom: 21%; opacity: 0; }
+      12%, 88% { opacity: 1; }
+      100% { bottom: 68%; opacity: 0; }
+    }
+
+    .designer-dot {
+      position: absolute;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: #fff;
+      border: 5px solid #347dff;
+      z-index: 7;
+    }
+
+    .designer-dot.orange { border-color: var(--accent); }
+
+    .designer-pill {
+      position: absolute;
+      min-width: 126px;
+      height: 40px;
+      border-radius: 999px;
+      background: #fff;
+      color: #585d60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      z-index: 8;
+      box-shadow: 0 8px 22px rgba(0,0,0,.2);
+    }
+
+    .designer-pill.start {
+      background: #347dff;
+      color: #fff;
+    }
+
+    .designer-drop-zone {
+      position: absolute;
+      width: clamp(88px, 8.4vw, 118px);
+      height: clamp(30px, 3vw, 36px);
+      border: 1px dashed rgba(255,255,255,.42);
+      border-radius: 8px;
+      background: rgba(255,255,255,.13);
+      backdrop-filter: blur(2px);
+      color: rgba(255,255,255,.78);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+      font-size: 11px;
+      font-weight: 850;
+      text-align: center;
+      z-index: 10;
+      transition: background .16s ease, border-color .16s ease, transform .16s ease;
+    }
+
+    .designer-drop-zone[data-kind="function"] { border-color: rgba(52,125,255,.68); }
+    .designer-drop-zone[data-kind="trigger"] { border-color: rgba(243,109,47,.72); }
+
+    .designer-drop-zone.is-over {
+      background: rgba(255,255,255,.25);
+      border-color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .designer-drop-zone.filled {
+      border-style: solid;
+      background: rgba(17,19,21,.66);
+      color: #fff;
+    }
+
+    .designer-drop-zone.filled[data-kind="function"] {
+      border-color: #347dff;
+      box-shadow: inset 3px 0 0 #347dff;
+    }
+
+    .designer-drop-zone.filled[data-kind="trigger"] {
+      border-color: var(--accent);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .designer-drop-zone span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+
+    .designer-legend {
+      display: flex;
+      align-items: center;
+      gap: 34px;
+      padding: 0 18px;
+      color: #bfc4c7;
+      font-size: 13px;
+      font-weight: 850;
+      background: rgba(19,22,24,.84);
+    }
+
+    .designer-line-key {
+      display: inline-block;
+      width: 52px;
+      height: 5px;
+      background: #347dff;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+
+    .device-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(0,0,0,.52);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .device-modal-backdrop.active {
+      display: flex;
+    }
+
+    .device-modal {
+      width: min(760px, calc(100vw - 48px));
+      max-height: min(840px, calc(100vh - 48px));
+      overflow: auto;
+      background: rgba(49, 56, 60, .98);
+      color: #e6e8ea;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      box-shadow: 0 26px 70px rgba(0,0,0,.42);
+      padding: 22px 24px 26px;
+    }
+
+    .device-modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid rgba(255,255,255,.14);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .device-modal-head span {
+      color: #c7ccd0;
+      margin-left: 12px;
+      font-size: 17px;
+    }
+
+    .device-modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(15,17,19,.35);
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .designer-setting-subtitle {
+      margin: 0 0 20px;
+      font-size: 16px;
+      color: #eef1f2;
+      font-weight: 900;
+    }
+
+    .designer-setting-row {
+      display: grid;
+      grid-template-columns: 12px 180px minmax(0, 1fr) 44px;
+      gap: 14px;
+      align-items: center;
+      min-height: 42px;
+      margin-bottom: 10px;
+      color: #dce0e2;
+      font-size: 16px;
+      font-weight: 850;
+    }
+
+    .designer-setting-row.wide {
+      grid-template-columns: 12px 1fr;
+    }
+
+    .designer-bullet {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .designer-input {
+      height: 40px;
+      border: 1px solid rgba(190,199,205,.42);
+      background: rgba(15,17,19,.35);
+      color: #d9dde0;
+      padding: 0 12px;
+      font-size: 15px;
+      font-weight: 850;
+      outline: none;
+    }
+
+    .designer-static-value {
+      color: #d9dde0;
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .designer-hint-text {
+      color: #b7bdc1;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .designer-settings-section {
+      margin-top: 24px;
+      padding-top: 8px;
+    }
+
+    .designer-settings-section h3 {
+      margin: 0 0 9px;
+      font-size: 18px;
+      color: #f0f2f3;
+    }
+
+    .designer-section-rule {
+      height: 1px;
+      background: rgba(255,255,255,.14);
+      margin-bottom: 14px;
+    }
+
+    .designer-mode,
+    .designer-terrain-types {
+      display: grid;
+      gap: 8px;
+    }
+
+    .designer-mode {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .designer-terrain-types {
+      grid-column: 3 / 5;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .designer-mode button,
+    .designer-terrain-types button {
+      min-height: 40px;
+      border: 1px solid rgba(190,199,205,.42);
+      background: rgba(15,17,19,.35);
+      color: #cfd4d7;
+      padding: 0 10px;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .designer-mode button.active,
+    .designer-terrain-types button.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .designer-terrain-only,
+    .designer-other-only {
+      display: none;
+    }
+
+    .device-modal.terrain-mode .designer-generic-only { display: none; }
+    .device-modal.terrain-mode .designer-terrain-only { display: grid; }
+    .device-modal.hide-category .designer-category-only { display: none; }
+    .device-modal.other-mode .designer-range-only { display: none; }
+    .device-modal.other-mode .designer-other-only { display: grid; }
+
     @media (max-width: 1180px) {
       .layout {
         grid-template-columns: 1fr;
@@ -544,6 +1067,14 @@
 
       .panel-grid {
         grid-template-columns: 1fr;
+      }
+
+      .designer-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .designer-map {
+        min-height: 420px;
       }
     }
   </style>
@@ -648,14 +1179,87 @@
 
       <section class="workspace">
         <nav class="tabs" aria-label="Product setting tabs">
-          <button class="tab active" data-tab="capability">Device Capability</button>
+          <button class="tab active" data-tab="device">Device Parameters</button>
+          <button class="tab" data-tab="capability">Device Capability</button>
           <button class="tab" data-tab="feedback">Feedback & Timing</button>
           <button class="tab" data-tab="response">Walking Response</button>
           <button class="tab" data-tab="cognitive">Cognitive Impact</button>
         </nav>
 
         <div class="content-shell">
-          <section id="capability" class="tab-panel active">
+          <section id="device" class="tab-panel active">
+            <div class="device-designer">
+              <div class="designer-shell">
+                <aside class="designer-panel designer-side">
+                  <div class="designer-head"><strong>产品功能</strong><span>function</span></div>
+                  <nav class="designer-functions" aria-label="产品功能">
+                    <button class="designer-function active" data-key="obstacle" data-kind="function" draggable="true" type="button">障碍物检测<span>Obstacle Detection</span></button>
+                    <button class="designer-function" data-key="terrain" data-kind="function" draggable="true" type="button">地势检测<span>Terrain Detection</span></button>
+                    <button class="designer-function" data-key="pedestrian" data-kind="function" draggable="true" type="button">行人检测<span>Pedestrian Detection</span></button>
+                    <button class="designer-function" data-key="vehicle" data-kind="function" draggable="true" type="button">车辆接近检测<span>Vehicle Approach Detection</span></button>
+                    <button class="designer-function" data-key="guidance" data-kind="function" draggable="true" type="button">引导物检测<span>Guidance Object Detection</span></button>
+                    <button class="designer-function" data-key="other" data-kind="function" draggable="true" type="button">其他信息检测<span>Other Information Detection</span></button>
+                  </nav>
+                </aside>
+
+                <aside class="designer-panel designer-trigger">
+                  <div class="designer-head"><strong>触发条件</strong><span>trigger</span></div>
+                  <div class="designer-trigger-card" data-trigger="obstacle" data-kind="trigger" draggable="true">障碍物</div>
+                  <div class="designer-trigger-card" data-trigger="vehicle" data-kind="trigger" draggable="true">车辆</div>
+                  <div class="designer-trigger-card" data-trigger="pedestrian" data-kind="trigger" draggable="true">行人</div>
+                  <div class="designer-trigger-card" data-trigger="landmark" data-kind="trigger" draggable="true">地标</div>
+                  <div class="designer-trigger-card" data-trigger="surface" data-kind="trigger" draggable="true">路面变化</div>
+                  <div class="designer-trigger-card" data-trigger="none" data-kind="trigger" draggable="true">无</div>
+                </aside>
+
+                <section class="designer-panel designer-map-panel">
+                  <div class="designer-scenario-title">
+                    <strong>固定场景</strong>
+                    <span>Fixed Scenario: Standard Urban Crossing</span>
+                    <span class="designer-info">i</span>
+                  </div>
+                  <div class="designer-map">
+                    <div class="designer-road-v"></div>
+                    <div class="designer-road-h"></div>
+                    <div class="designer-block" style="left:0;top:0;width:38%;height:31%;"></div>
+                    <div class="designer-block" style="left:0;bottom:0;width:38%;height:24%;"></div>
+                    <div class="designer-block" style="right:0;top:0;width:37%;height:100%;"></div>
+                    <div class="designer-road-spur"></div>
+                    <div class="designer-crosswalk-v" style="left:43%;top:32%;"><i></i><i></i><i></i><i></i></div>
+                    <div class="designer-crosswalk-v" style="left:43%;bottom:25%;"><i></i><i></i><i></i><i></i></div>
+                    <div class="designer-crosswalk-h" style="left:28%;top:44%;"><i></i><i></i><i></i></div>
+                    <div class="designer-route"></div>
+                    <i class="designer-route-arrow horizontal"></i>
+                    <i class="designer-route-arrow horizontal delay-1"></i>
+                    <i class="designer-route-arrow horizontal delay-2"></i>
+                    <i class="designer-route-arrow vertical"></i>
+                    <i class="designer-route-arrow vertical delay-1"></i>
+                    <i class="designer-route-arrow vertical delay-2"></i>
+                    <div class="designer-drop-zone" data-slot="start-road" data-kind="function" style="left:20%;bottom:23%;"><span>功能</span></div>
+                    <div class="designer-drop-zone" data-slot="start-road" data-kind="trigger" style="left:20%;bottom:15%;"><span>触发</span></div>
+                    <div class="designer-drop-zone" data-slot="mid-road" data-kind="function" style="left:43%;bottom:23%;"><span>功能</span></div>
+                    <div class="designer-drop-zone" data-slot="mid-road" data-kind="trigger" style="left:43%;bottom:15%;"><span>触发</span></div>
+                    <div class="designer-drop-zone" data-slot="turn-crossing" data-kind="function" style="right:23%;bottom:23%;"><span>功能</span></div>
+                    <div class="designer-drop-zone" data-slot="turn-crossing" data-kind="trigger" style="right:23%;bottom:15%;"><span>触发</span></div>
+                    <div class="designer-drop-zone" data-slot="end-crossing" data-kind="function" style="right:22%;top:39%;"><span>功能</span></div>
+                    <div class="designer-drop-zone" data-slot="end-crossing" data-kind="trigger" style="right:22%;top:47%;"><span>触发</span></div>
+                    <div class="designer-dot" style="left:12%;bottom:16%;"></div>
+                    <div class="designer-dot orange" style="right:29%;top:32%;"></div>
+                    <div class="designer-dot orange" style="right:30.4%;top:18%;"></div>
+                    <div class="designer-pill start" style="left:7%;bottom:19%;">起点 Start</div>
+                    <div class="designer-pill" style="right:17%;top:18%;">终点 End</div>
+                  </div>
+                  <div class="designer-legend">
+                    <span>○ 起点 Start</span>
+                    <span>⚑ 终点 End</span>
+                    <span><i class="designer-line-key"></i>路线 Route</span>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </section>
+
+          <section id="capability" class="tab-panel">
             <div class="capability-grid">
               <div>
                 <h2 class="subhead">Reference Detection</h2>
@@ -850,6 +1454,52 @@
     </div>
   </main>
 
+  <div class="device-modal-backdrop" id="deviceModalBackdrop" aria-hidden="true">
+    <section class="device-modal" id="deviceSettingsModal" role="dialog" aria-modal="true" aria-labelledby="deviceModalTitle">
+      <div class="device-modal-head">
+        <div>
+          <strong id="deviceModalTitle" data-designer-title-cn>障碍物检测</strong>
+          <span data-designer-title-en>Obstacle Detection</span>
+        </div>
+        <button class="device-modal-close" id="deviceModalClose" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="designer-setting-subtitle" data-designer-subtitle>范围、类别、概率、作用时间、反馈参数</div>
+
+      <div class="designer-setting-row wide"><span class="designer-bullet"></span><div>提醒时机： <span data-designer-trigger-name>障碍物</span></div></div>
+      <div class="designer-setting-row designer-terrain-only"><span class="designer-bullet"></span><label>地面类型</label><div class="designer-terrain-types" data-designer-terrain-types>
+        <button class="active" type="button">路口</button>
+        <button type="button">平整路面</button>
+        <button type="button">盲道</button>
+        <button type="button">不平整自然路面</button>
+        <button type="button">坡度路面</button>
+        <button type="button">高度落差路面</button>
+      </div><span></span></div>
+      <div class="designer-setting-row wide designer-generic-only"><span class="designer-bullet"></span><div data-designer-simulator>障碍物识别范围模拟器</div></div>
+      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>识别范围</label><div class="designer-static-value" data-designer-range>默认</div><span></span></div>
+      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>范围影响系数</label><input class="designer-input" data-designer-factor /><span></span></div>
+      <div class="designer-setting-row designer-other-only"><span></span><label>模拟概率</label><input class="designer-input" /><span></span></div>
+      <div class="designer-setting-row"><span></span><label>作用时长</label><input class="designer-input" /><span></span></div>
+      <div class="designer-setting-row"><span></span><label>准备时长</label><input class="designer-input" /><span></span></div>
+      <div class="designer-setting-row wide designer-generic-only designer-category-only"><span class="designer-bullet"></span><div data-designer-category-simulator>障碍物类别触发模拟器（除盲杖外）</div></div>
+      <div class="designer-setting-row designer-generic-only designer-category-only"><span></span><label>模拟概率</label><input class="designer-input" /><span class="designer-hint-text">0~1</span></div>
+      <div class="designer-setting-row"><span class="designer-bullet"></span><label>误报漏报概率</label><input class="designer-input" /><span class="designer-hint-text">0~1</span></div>
+
+      <div class="designer-settings-section">
+        <h3>反馈参数</h3>
+        <div class="designer-section-rule"></div>
+        <div class="designer-setting-row wide"><span class="designer-bullet"></span><div>模态类型</div></div>
+        <div class="designer-mode">
+          <button class="active" type="button">听觉</button>
+          <button type="button">触觉</button>
+          <button type="button">牵引力</button>
+        </div>
+        <div class="designer-setting-row"><span class="designer-bullet"></span><label>提醒时长</label><input class="designer-input" /><span></span></div>
+        <div class="designer-setting-row"><span class="designer-bullet"></span><label>提醒频率</label><input class="designer-input" /><span></span></div>
+        <div class="designer-setting-row"><span class="designer-bullet"></span><label>竞争系数</label><input class="designer-input" /><span></span></div>
+      </div>
+    </section>
+  </div>
+
   <script>
     document.querySelectorAll(".tab").forEach((tab) => {
       tab.addEventListener("click", () => {
@@ -876,6 +1526,196 @@
         input.value = Math.min(max, Math.max(min, Number(input.value || 0) + step));
       });
     });
+
+    const designerPresets = {
+      obstacle: {
+        cn: "障碍物检测", en: "Obstacle Detection", subtitle: "范围、类别、概率、作用时间、反馈参数",
+        trigger: "障碍物", simulator: "障碍物识别范围模拟器", range: "默认", factor: "",
+        categorySimulator: "障碍物类别触发模拟器（除盲杖外）"
+      },
+      terrain: {
+        cn: "地势检测", en: "Terrain Detection", subtitle: "地面类型、概率、作用时间、反馈参数",
+        trigger: "地面类型", simulator: "地面类型触发模拟器",
+        range: "路口 / 平整路面 / 盲道 / 不平整自然路面 / 坡度路面 / 高度落差路面",
+        factor: "", categorySimulator: "地面类型概率触发模拟器"
+      },
+      pedestrian: {
+        cn: "行人检测", en: "Pedestrian Detection", subtitle: "行人触发、识别范围、作用时间、反馈参数",
+        trigger: "行人", simulator: "行人触发模拟器", range: "默认", factor: "",
+        categorySimulator: "行人类别概率触发模拟器", showCategory: false
+      },
+      vehicle: {
+        cn: "车辆接近检测", en: "Vehicle Approach Detection", subtitle: "车辆触发、识别范围、作用时间、反馈参数",
+        trigger: "车辆接近", simulator: "车辆触发模拟器", range: "默认", factor: "",
+        categorySimulator: "车辆类别概率触发模拟器", showCategory: false
+      },
+      guidance: {
+        cn: "引导物检测", en: "Guidance Object Detection", subtitle: "引导物触发、识别范围、作用时间、反馈参数",
+        trigger: "引导物", simulator: "引导物触发模拟器", range: "默认", factor: "",
+        categorySimulator: "引导物类别概率触发模拟器", showCategory: false
+      },
+      other: {
+        cn: "其他信息检测", en: "Other Information Detection", subtitle: "其他物体触发、概率、作用时间、反馈参数",
+        trigger: "其他信息", simulator: "其他物体触发模拟器", range: "默认", factor: "",
+        categorySimulator: "其他信息类别概率触发模拟器", showCategory: false
+      }
+    };
+
+    const deviceModalBackdrop = document.getElementById("deviceModalBackdrop");
+    const deviceSettingsModal = document.getElementById("deviceSettingsModal");
+
+    function setDesignerPreset(key) {
+      const preset = designerPresets[key] || designerPresets.obstacle;
+      deviceSettingsModal.classList.toggle("terrain-mode", key === "terrain");
+      deviceSettingsModal.classList.toggle("other-mode", key === "other");
+      deviceSettingsModal.classList.toggle("hide-category", preset.showCategory === false);
+      document.querySelector("[data-designer-title-cn]").textContent = preset.cn;
+      document.querySelector("[data-designer-title-en]").textContent = preset.en;
+      document.querySelector("[data-designer-subtitle]").textContent = preset.subtitle;
+      document.querySelector("[data-designer-trigger-name]").textContent = preset.trigger;
+      document.querySelector("[data-designer-simulator]").textContent = preset.simulator;
+      document.querySelector("[data-designer-range]").textContent = preset.range;
+      document.querySelector("[data-designer-factor]").value = preset.factor;
+      document.querySelector("[data-designer-category-simulator]").textContent = preset.categorySimulator;
+    }
+
+    function openDeviceModal() {
+      deviceModalBackdrop.classList.add("active");
+      deviceModalBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDeviceModal() {
+      deviceModalBackdrop.classList.remove("active");
+      deviceModalBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    document.querySelectorAll(".designer-function").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".designer-function").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        setDesignerPreset(button.dataset.key);
+        openDeviceModal();
+      });
+    });
+
+    document.getElementById("deviceModalClose").addEventListener("click", closeDeviceModal);
+    deviceModalBackdrop.addEventListener("click", (event) => {
+      if (event.target === deviceModalBackdrop) closeDeviceModal();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && deviceModalBackdrop.classList.contains("active")) closeDeviceModal();
+    });
+
+    document.querySelectorAll(".designer-mode button, .designer-terrain-types button").forEach((button) => {
+      button.addEventListener("click", () => {
+        button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+      });
+    });
+
+    function designerDragPayloadFrom(source) {
+      const kind = source.dataset.kind;
+      const label = kind === "function"
+        ? source.childNodes[0].textContent.trim()
+        : source.textContent.trim();
+      return {
+        kind,
+        key: source.dataset.key || source.dataset.trigger || "",
+        label
+      };
+    }
+
+    let currentDesignerDragPayload = null;
+
+    document.querySelectorAll(".designer-function, .designer-trigger-card").forEach((source) => {
+      source.addEventListener("dragstart", (event) => {
+        currentDesignerDragPayload = designerDragPayloadFrom(source);
+        source.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "copy";
+        const serialized = JSON.stringify(currentDesignerDragPayload);
+        event.dataTransfer.setData("text/plain", serialized);
+        event.dataTransfer.setData("application/json", serialized);
+      });
+      source.addEventListener("dragend", () => {
+        source.classList.remove("dragging");
+        currentDesignerDragPayload = null;
+      });
+    });
+
+    function shiftedDesignerPosition(zone) {
+      const style = zone.getAttribute("style") || "";
+      const offset = 8;
+      return style.replace(/(top|bottom):([0-9.]+)%/g, (match, edge, value) => {
+        const current = Number(value);
+        const direction = zone.dataset.kind === "function" ? 1 : -1;
+        const next = edge === "bottom" ? current + direction * offset : current - direction * offset;
+        return `${edge}:${Math.max(4, Math.min(88, next))}%`;
+      });
+    }
+
+    function hasEmptyDesignerSiblingZone(zone) {
+      return Boolean(document.querySelector(
+        `.designer-drop-zone[data-slot="${zone.dataset.slot}"][data-kind="${zone.dataset.kind}"]:not(.filled)`
+      ));
+    }
+
+    function addDesignerFollowupZone(zone) {
+      if (hasEmptyDesignerSiblingZone(zone)) return;
+      const clone = zone.cloneNode(true);
+      clone.classList.remove("filled", "is-over");
+      delete clone.dataset.value;
+      delete clone.dataset.label;
+      clone.dataset.extra = "true";
+      clone.setAttribute("style", shiftedDesignerPosition(zone));
+      clone.querySelector("span").textContent = clone.dataset.kind === "function" ? "功能" : "触发";
+      zone.after(clone);
+      bindDesignerDropZone(clone);
+    }
+
+    function bindDesignerDropZone(zone) {
+      zone.addEventListener("dragenter", (event) => {
+        event.preventDefault();
+        zone.classList.add("is-over");
+        event.dataTransfer.dropEffect = "copy";
+      });
+      zone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        zone.classList.add("is-over");
+        event.dataTransfer.dropEffect = "copy";
+      });
+      zone.addEventListener("dragleave", () => {
+        zone.classList.remove("is-over");
+      });
+      zone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        zone.classList.remove("is-over");
+        const raw = event.dataTransfer.getData("text/plain") || event.dataTransfer.getData("application/json");
+        let payload = currentDesignerDragPayload;
+        if (raw) {
+          try {
+            payload = JSON.parse(raw);
+          } catch {
+            payload = currentDesignerDragPayload;
+          }
+        }
+        if (!payload || payload.kind !== zone.dataset.kind) return;
+        zone.dataset.value = payload.key;
+        zone.dataset.label = payload.label;
+        zone.classList.add("filled");
+        zone.querySelector("span").textContent = payload.label;
+        addDesignerFollowupZone(zone);
+      });
+      zone.addEventListener("click", () => {
+        delete zone.dataset.value;
+        delete zone.dataset.label;
+        zone.classList.remove("filled");
+        zone.querySelector("span").textContent = zone.dataset.kind === "function" ? "功能" : "触发";
+      });
+    }
+
+    document.querySelectorAll(".designer-drop-zone").forEach(bindDesignerDropZone);
+    setDesignerPreset("obstacle");
 
     function activeText(container) {
       const active = container.querySelector(".active");
