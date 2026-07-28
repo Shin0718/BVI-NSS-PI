@@ -292,6 +292,7 @@
       display: grid;
       grid-template-columns: repeat(4, clamp(22px, 2vw, 34px));
       gap: clamp(5px, .55vw, 8px);
+      z-index: 3;
     }
 
     .crosswalk-h {
@@ -299,9 +300,12 @@
       display: grid;
       grid-template-rows: repeat(3, clamp(18px, 1.65vw, 26px));
       gap: clamp(5px, .6vw, 9px);
+      z-index: 3;
     }
 
     .crosswalk-v i, .crosswalk-h i { display: block; background: #e8e7e0; }
+    .crosswalk-v i { height: clamp(54px, 6.4vw, 82px); }
+    .crosswalk-h i { width: clamp(88px, 9.5vw, 126px); }
 
     .route {
       position: absolute;
@@ -663,10 +667,10 @@
             <div class="building" style="right:6%;top:5%;width:19%;height:20%;"></div>
             <div class="building" style="left:22%;bottom:13%;width:13%;height:13%;"></div>
             <div class="building" style="right:16%;bottom:9%;width:13%;height:19%;"></div>
-            <div class="crosswalk-v" style="left:41%;top:24%;"><i></i><i></i><i></i><i></i></div>
-            <div class="crosswalk-v" style="left:41%;bottom:16%;"><i></i><i></i><i></i><i></i></div>
-            <div class="crosswalk-h" style="left:27%;top:38%;width:118px;"><i></i><i></i><i></i></div>
-            <div class="crosswalk-h" style="right:26%;top:38%;width:118px;"><i></i><i></i><i></i></div>
+            <div class="crosswalk-v" style="left:42%;top:33%;"><i></i><i></i><i></i><i></i></div>
+            <div class="crosswalk-v" style="left:42%;bottom:24%;"><i></i><i></i><i></i><i></i></div>
+            <div class="crosswalk-h" style="left:27%;top:43%;"><i></i><i></i><i></i></div>
+            <div class="crosswalk-h" style="right:26%;top:43%;"><i></i><i></i><i></i></div>
             <div class="route"></div>
             <div class="dot" style="left:12%;bottom:15%;"></div>
             <div class="dot orange" style="right:29%;top:32%;"></div>
