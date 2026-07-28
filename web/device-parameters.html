@@ -422,14 +422,21 @@
       height: 130px;
       border-radius: 6px;
       background: rgba(255,255,255,.16);
-      padding: 12px 14px;
+      padding: 12px 10px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
     .metric label { color: #c9ced1; font-size: 12px; font-weight: 850; }
-    .metric strong { font-size: 34px; font-weight: 800; color: #fff; line-height: 1; }
+    .metric strong {
+      max-width: 100%;
+      color: #fff;
+      font-size: clamp(26px, 2.1vw, 30px);
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
     .metric span { color: #72df67; font-size: 12px; font-weight: 900; }
 
     .chart-panel {
