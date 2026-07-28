@@ -327,24 +327,48 @@
       border-right: 7px solid var(--blue);
     }
 
-    .route-motion {
+    .route-arrow {
       position: absolute;
-      inset: 0;
+      width: 0;
+      height: 0;
       z-index: 7;
       pointer-events: none;
-      overflow: visible;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.26));
     }
 
-    .route-motion path {
-      fill: none;
-      stroke: transparent;
+    .route-arrow.horizontal {
+      left: 17%;
+      bottom: calc(16% - 5px);
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-left: 15px solid #fff;
+      animation: routeArrowHorizontal 3.2s linear infinite;
     }
 
-    .route-motion polygon {
-      fill: #fff;
-      stroke: var(--blue);
-      stroke-width: .8;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,.24));
+    .route-arrow.vertical {
+      right: calc(30% - 5px);
+      bottom: 20%;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 15px solid #fff;
+      animation: routeArrowVertical 3.2s linear infinite;
+    }
+
+    .route-arrow.delay-1 { animation-delay: 1.05s; opacity: .7; }
+    .route-arrow.delay-2 { animation-delay: 2.1s; opacity: .45; }
+
+    @keyframes routeArrowHorizontal {
+      0% { left: 17%; opacity: 0; }
+      12% { opacity: 1; }
+      88% { opacity: 1; }
+      100% { left: 67%; opacity: 0; }
+    }
+
+    @keyframes routeArrowVertical {
+      0% { bottom: 20%; opacity: 0; }
+      12% { opacity: 1; }
+      88% { opacity: 1; }
+      100% { bottom: 67%; opacity: 0; }
     }
 
     .dot {
@@ -691,24 +715,12 @@
             <div class="crosswalk-h" style="left:28%;top:44%;"><i></i><i></i><i></i></div>
             <div class="crosswalk-h" style="right:27%;top:44%;"><i></i><i></i><i></i></div>
             <div class="route"></div>
-            <svg class="route-motion" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
-              <path id="route-flow-path" d="M170 840 H655 Q700 840 700 795 V250"></path>
-              <polygon points="0,-18 34,0 0,18">
-                <animateMotion dur="3.8s" repeatCount="indefinite" rotate="auto">
-                  <mpath href="#route-flow-path"></mpath>
-                </animateMotion>
-              </polygon>
-              <polygon points="0,-16 30,0 0,16" opacity=".72">
-                <animateMotion dur="3.8s" begin="1.25s" repeatCount="indefinite" rotate="auto">
-                  <mpath href="#route-flow-path"></mpath>
-                </animateMotion>
-              </polygon>
-              <polygon points="0,-16 30,0 0,16" opacity=".48">
-                <animateMotion dur="3.8s" begin="2.5s" repeatCount="indefinite" rotate="auto">
-                  <mpath href="#route-flow-path"></mpath>
-                </animateMotion>
-              </polygon>
-            </svg>
+            <i class="route-arrow horizontal"></i>
+            <i class="route-arrow horizontal delay-1"></i>
+            <i class="route-arrow horizontal delay-2"></i>
+            <i class="route-arrow vertical"></i>
+            <i class="route-arrow vertical delay-1"></i>
+            <i class="route-arrow vertical delay-2"></i>
             <div class="dot" style="left:12%;bottom:15%;"></div>
             <div class="dot orange" style="right:29%;top:32%;"></div>
             <div class="dot orange" style="right:30.4%;top:18%;"></div>
