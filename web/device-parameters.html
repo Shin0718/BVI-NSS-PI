@@ -765,11 +765,11 @@
 
         <aside class="panel trigger-panel">
           <div class="panel-head"><strong>触发条件</strong><span>trigger</span></div>
-          <div class="trigger-card" data-trigger="0" data-kind="trigger" draggable="true">障碍物范围触发</div>
-          <div class="trigger-card" data-trigger="1" data-kind="trigger" draggable="true">障碍物类别概率触发</div>
-          <div class="trigger-card" data-trigger="2" data-kind="trigger" draggable="true">盲杖外障碍触发</div>
-          <div class="trigger-card" data-trigger="3" data-kind="trigger" draggable="true">误报/漏报触发</div>
-          <div class="trigger-card" data-trigger="4" data-kind="trigger" draggable="true">反馈竞争触发</div>
+          <div class="trigger-card" data-trigger="obstacle" data-kind="trigger" draggable="true">障碍物</div>
+          <div class="trigger-card" data-trigger="vehicle" data-kind="trigger" draggable="true">车辆</div>
+          <div class="trigger-card" data-trigger="pedestrian" data-kind="trigger" draggable="true">行人</div>
+          <div class="trigger-card" data-trigger="landmark" data-kind="trigger" draggable="true">地标</div>
+          <div class="trigger-card" data-trigger="surface" data-kind="trigger" draggable="true">路面变化</div>
           <div class="trigger-card" data-trigger="5" data-kind="trigger" draggable="true">无</div>
         </aside>
       </div>
@@ -900,47 +900,41 @@
         cn: "障碍物检测", en: "Obstacle Detection", subtitle: "范围、类别、概率、作用时间、反馈参数",
         trigger: "障碍物", simulator: "障碍物识别范围模拟器", range: "默认", factor: "1.24",
         categorySimulator: "障碍物类别触发模拟器（除盲杖外）",
-        note: "触发概率 = 采集中触发的时间长度 / 总行走时间长度",
-        cards: ["障碍物范围触发", "障碍物类别概率触发", "盲杖外障碍触发", "误报/漏报触发", "反馈竞争触发", "无"]
+        note: "触发概率 = 采集中触发的时间长度 / 总行走时间长度"
       },
       terrain: {
         cn: "地势检测", en: "Terrain Detection", subtitle: "地面类型、概率、作用时间、反馈参数",
         trigger: "地面类型", simulator: "地面类型触发模拟器", range: "路口 / 平整路面 / 盲道 / 不平整自然路面 / 坡度路面 / 高度落差路面", factor: "0.05",
         categorySimulator: "地面类型概率触发模拟器",
-        note: "默认误报/漏报概率为 0.05",
-        cards: ["地面类型触发", "不平整自然路面触发", "坡度路面触发", "高度落差触发", "触觉反馈竞争触发", "无"]
+        note: "默认误报/漏报概率为 0.05"
       },
       pedestrian: {
         cn: "行人检测", en: "Pedestrian Detection", subtitle: "行人触发、识别范围、作用时间、反馈参数",
         trigger: "行人", simulator: "行人触发模拟器", range: "默认", factor: "1.18",
         categorySimulator: "行人类别概率触发模拟器",
         showCategory: false,
-        note: "",
-        cards: ["行人触发", "人流密度触发", "行人范围影响触发", "误报/漏报触发", "听觉通道竞争触发", "无"]
+        note: ""
       },
       vehicle: {
         cn: "车辆接近检测", en: "Vehicle Approach Detection", subtitle: "车辆触发、识别范围、作用时间、反馈参数",
         trigger: "车辆接近", simulator: "车辆触发模拟器", range: "默认", factor: "1.18",
         categorySimulator: "车辆类别概率触发模拟器",
         showCategory: false,
-        note: "",
-        cards: ["车辆接近触发", "喇叭触发", "倒车蜂鸣触发", "路口车辆触发", "高风险停探测触发", "无"]
+        note: ""
       },
       guidance: {
         cn: "引导物检测", en: "Guidance Object Detection", subtitle: "引导物触发、识别范围、作用时间、反馈参数",
         trigger: "引导物", simulator: "引导物触发模拟器", range: "默认", factor: "1.18",
         categorySimulator: "引导物类别概率触发模拟器",
         showCategory: false,
-        note: "",
-        cards: ["盲道触发", "路缘触发", "墙/栏杆触发", "地标触发", "参照保持触发", "无"]
+        note: ""
       },
       other: {
         cn: "其他信息检测", en: "Other Information Detection", subtitle: "其他物体触发、概率、作用时间、反馈参数",
         trigger: "其他信息", simulator: "其他物体触发模拟器", range: "默认", factor: "",
         categorySimulator: "其他信息类别概率触发模拟器",
         showCategory: false,
-        note: "",
-        cards: ["其他物体触发", "标识触发", "入口触发", "POI 触发", "信息竞争触发", "无"]
+        note: ""
       }
     };
 
@@ -958,9 +952,6 @@
       document.querySelector("[data-factor]").value = p.factor;
       document.querySelector("[data-category-simulator]").textContent = p.categorySimulator;
       document.querySelector("[data-note]").textContent = p.note;
-      document.querySelectorAll("[data-trigger]").forEach((item, index) => {
-        item.textContent = p.cards[index] || "";
-      });
     }
 
     document.querySelectorAll(".function-list button").forEach((button) => {
