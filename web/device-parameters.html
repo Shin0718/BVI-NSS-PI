@@ -660,6 +660,7 @@
 
     .settings.terrain-mode .generic-only { display: none; }
     .settings.terrain-mode .terrain-only { display: grid; }
+    .settings.hide-category .category-only { display: none; }
 
     .terrain-type-row {
       align-items: start;
@@ -866,9 +867,9 @@
         <div class="row generic-only"><span></span><label>范围影响系数</label><input class="input" data-factor value="1.24" /><span></span></div>
         <div class="row"><span></span><label>作用时长</label><input class="input" /><span></span></div>
         <div class="row"><span></span><label>准备时长</label><input class="input" /><span></span></div>
-        <div class="row wide generic-only"><span class="bullet"></span><div data-category-simulator>障碍物类别触发模拟器（除盲杖外）</div></div>
-        <div class="row generic-only"><span></span><label>模拟概率</label><input class="input" /><span class="hint-text">0~1</span></div>
-        <div class="hint-text generic-only">触发概率 = 采集中触发的时间长度 / 总行走时间长度</div>
+        <div class="row wide generic-only category-only"><span class="bullet"></span><div data-category-simulator>障碍物类别触发模拟器（除盲杖外）</div></div>
+        <div class="row generic-only category-only"><span></span><label>模拟概率</label><input class="input" /><span class="hint-text">0~1</span></div>
+        <div class="hint-text generic-only category-only">触发概率 = 采集中触发的时间长度 / 总行走时间长度</div>
         <div class="row"><span class="bullet"></span><label>误报漏报概率</label><input class="input" /><span class="hint-text">0~1</span></div>
         <div class="hint-text" data-note>触发概率 = 采集中触发的时间长度 / 总行走时间长度</div>
 
@@ -907,9 +908,10 @@
       },
       pedestrian: {
         cn: "行人检测", en: "Pedestrian Detection", subtitle: "行人触发、识别范围、作用时间、反馈参数",
-        trigger: "行人（人音）", simulator: "行人触发模拟器", range: "默认", factor: "1.18",
+        trigger: "行人", simulator: "行人触发模拟器", range: "默认", factor: "1.18",
         categorySimulator: "行人类别概率触发模拟器",
-        note: "高人流场景可提高 HUMAN_ACTIVITY_PROB，形成连续行人触发。",
+        showCategory: false,
+        note: "",
         cards: ["行人触发", "人流密度触发", "行人范围影响触发", "误报/漏报触发", "听觉通道竞争触发", "无"]
       },
       vehicle: {
@@ -938,6 +940,7 @@
     function setPreset(key) {
       const p = presets[key] || presets.obstacle;
       document.querySelector(".settings").classList.toggle("terrain-mode", key === "terrain");
+      document.querySelector(".settings").classList.toggle("hide-category", p.showCategory === false);
       document.querySelector("[data-title-cn]").textContent = p.cn;
       document.querySelector("[data-title-en]").textContent = p.en;
       document.querySelector("[data-subtitle]").textContent = p.subtitle;
