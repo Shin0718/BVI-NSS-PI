@@ -19,6 +19,13 @@
 
     * { box-sizing: border-box; }
 
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -27,20 +34,21 @@
     }
 
     .app {
-      min-height: 100vh;
-      padding: 22px;
+      height: 100vh;
+      padding: 18px;
       background:
         radial-gradient(circle at 80% 0%, rgba(255,255,255,.08), transparent 26%),
         linear-gradient(135deg, #111315, #22272a);
+      overflow: hidden;
     }
 
     .topbar {
-      height: 58px;
+      height: 52px;
       display: grid;
       grid-template-columns: 1fr auto 1fr;
-      gap: 20px;
+      gap: 16px;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 14px;
     }
 
     .brand {
@@ -50,9 +58,9 @@
     }
 
     .logo {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+      width: 46px;
+      height: 46px;
+      border-radius: 11px;
       background: var(--accent);
       display: grid;
       place-items: center;
@@ -78,12 +86,12 @@
 
     .run-controls {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
 
     .run-btn {
-      height: 50px;
-      min-width: 124px;
+      height: 46px;
+      min-width: 112px;
       border: 0;
       border-radius: 10px;
       background: #353a3e;
@@ -100,8 +108,8 @@
 
     .ready {
       justify-self: end;
-      height: 42px;
-      padding: 0 20px;
+      height: 38px;
+      padding: 0 18px;
       border-radius: 999px;
       border: 1px solid rgba(114,223,103,.28);
       background: rgba(114,223,103,.12);
@@ -122,9 +130,11 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 230px 185px minmax(620px, 1fr) 500px;
-      gap: 14px;
+      grid-template-columns: minmax(180px, .78fr) minmax(142px, .55fr) minmax(520px, 2.45fr) minmax(360px, 1.38fr);
+      gap: 12px;
       align-items: start;
+      height: calc(100vh - 84px);
+      min-height: 0;
     }
 
     .panel {
@@ -135,8 +145,16 @@
     }
 
     .left-panel, .trigger-panel {
-      padding: 18px;
-      min-height: 640px;
+      padding: 16px;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .trigger-panel {
+      display: grid;
+      grid-template-rows: auto repeat(5, minmax(0, 1fr));
+      gap: 10px;
     }
 
     .panel-head {
@@ -144,8 +162,8 @@
       align-items: baseline;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 22px;
-      font-size: 15px;
+      margin-bottom: 14px;
+      font-size: 14px;
       font-weight: 900;
     }
 
@@ -156,18 +174,20 @@
 
     .function-list {
       display: grid;
-      gap: 12px;
+      grid-template-rows: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      height: calc(100% - 32px);
     }
 
     .function-list button {
-      min-height: 82px;
+      min-height: 0;
       border: 0;
       border-radius: 8px;
-      padding: 15px 18px;
+      padding: 12px 14px;
       background: rgba(255,255,255,.08);
       color: #d6d9db;
       text-align: left;
-      font-size: 14px;
+      font-size: clamp(12px, .8vw, 14px);
       font-weight: 900;
       line-height: 1.35;
       cursor: pointer;
@@ -176,7 +196,7 @@
     .function-list button span {
       display: block;
       color: #b9bec2;
-      font-size: 13px;
+      font-size: clamp(11px, .72vw, 13px);
       font-weight: 750;
     }
 
@@ -188,31 +208,38 @@
     .function-list button.active span { color: #fff; }
 
     .trigger-card {
-      height: 84px;
-      margin-bottom: 12px;
-      border-radius: 12px;
+      height: auto;
+      min-height: 0;
+      margin-bottom: 0;
+      border-radius: 10px;
       background: #eceeef;
       color: #323638;
       display: grid;
       place-items: center;
       padding: 12px;
       text-align: center;
-      font-size: 13px;
+      font-size: clamp(11px, .72vw, 13px);
       font-weight: 900;
     }
 
     .center {
       display: grid;
-      gap: 14px;
+      grid-template-rows: minmax(0, 1fr) 226px;
+      gap: 12px;
+      height: 100%;
+      min-height: 0;
     }
 
     .map-panel {
       overflow: hidden;
+      display: grid;
+      grid-template-rows: 50px minmax(0, 1fr) 36px;
+      min-height: 0;
     }
 
     .scenario-title {
-      height: 60px;
-      padding: 0 18px;
+      height: 50px;
+      padding: 0 16px;
       border-bottom: 1px solid var(--line);
       display: flex;
       align-items: center;
@@ -235,7 +262,7 @@
 
     .map {
       position: relative;
-      height: 520px;
+      height: auto;
       background: #4e5051;
       overflow: hidden;
     }
@@ -248,15 +275,15 @@
     .crosswalk-v {
       position: absolute;
       display: grid;
-      grid-template-columns: repeat(4, 34px);
-      gap: 8px;
+      grid-template-columns: repeat(4, clamp(22px, 2vw, 34px));
+      gap: clamp(5px, .55vw, 8px);
     }
 
     .crosswalk-h {
       position: absolute;
       display: grid;
-      grid-template-rows: repeat(3, 26px);
-      gap: 9px;
+      grid-template-rows: repeat(3, clamp(18px, 1.65vw, 26px));
+      gap: clamp(5px, .6vw, 9px);
     }
 
     .crosswalk-v i, .crosswalk-h i { display: block; background: #e8e7e0; }
@@ -266,29 +293,29 @@
       left: 13%;
       bottom: 16%;
       width: 57%;
-      height: 148px;
-      border-left: 8px solid var(--blue);
-      border-bottom: 8px solid var(--blue);
-      border-right: 8px solid var(--blue);
+      height: 28%;
+      border-left: 7px solid var(--blue);
+      border-bottom: 7px solid var(--blue);
+      border-right: 7px solid var(--blue);
       border-radius: 0 0 34px 34px;
     }
 
     .route::after {
       content: "";
       position: absolute;
-      right: -8px;
-      top: -125px;
-      height: 132px;
-      border-right: 8px solid var(--blue);
+      right: -7px;
+      top: -90%;
+      height: 94%;
+      border-right: 7px solid var(--blue);
     }
 
     .dot {
       position: absolute;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background: #fff;
-      border: 6px solid var(--blue);
+      border: 5px solid var(--blue);
       z-index: 5;
     }
 
@@ -296,15 +323,15 @@
 
     .pill {
       position: absolute;
-      min-width: 138px;
-      height: 44px;
+      min-width: 124px;
+      height: 38px;
       border-radius: 999px;
       background: #fff;
       color: #585d60;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
       z-index: 6;
       box-shadow: 0 8px 22px rgba(0,0,0,.2);
@@ -314,8 +341,8 @@
 
     .marker {
       position: absolute;
-      width: 50px;
-      height: 50px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       background: var(--accent);
       display: grid;
@@ -328,21 +355,21 @@
 
     .marker-label {
       position: absolute;
-      height: 54px;
-      min-width: 170px;
-      padding: 0 22px;
+      height: 46px;
+      min-width: 150px;
+      padding: 0 18px;
       border-radius: 13px;
       background: rgba(255,255,255,.92);
       color: #777d80;
       display: flex;
       align-items: center;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
       z-index: 7;
     }
 
     .legend {
-      height: 42px;
+      height: 36px;
       display: flex;
       align-items: center;
       gap: 32px;
@@ -363,32 +390,34 @@
     }
 
     .result-panel {
-      padding: 18px;
+      padding: 16px;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .metrics {
       display: grid;
       grid-template-columns: repeat(4, minmax(0,1fr));
-      gap: 12px;
+      gap: 10px;
     }
 
     .metric {
-      height: 116px;
+      height: 78px;
       border-radius: 6px;
       background: rgba(255,255,255,.16);
-      padding: 14px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
-    .metric label { color: #c9ced1; font-size: 13px; font-weight: 850; }
-    .metric strong { font-size: 34px; font-weight: 800; color: #fff; }
-    .metric span { color: #72df67; font-size: 12px; font-weight: 900; }
+    .metric label { color: #c9ced1; font-size: 12px; font-weight: 850; }
+    .metric strong { font-size: 27px; font-weight: 800; color: #fff; }
+    .metric span { color: #72df67; font-size: 11px; font-weight: 900; }
 
     .chart {
-      height: 250px;
-      margin-top: 16px;
+      height: 112px;
+      margin-top: 12px;
       background: #f7f5f3;
       display: grid;
       place-items: center;
@@ -398,103 +427,103 @@
     .chart svg { width: 100%; height: 100%; }
 
     .settings {
-      padding: 26px 28px;
-      min-height: 740px;
-      max-height: calc(100vh - 110px);
-      overflow: auto;
+      padding: 18px 20px;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .setting-title {
       display: flex;
       align-items: baseline;
-      gap: 18px;
-      padding-bottom: 18px;
+      gap: 14px;
+      padding-bottom: 12px;
       border-bottom: 1px solid var(--line);
-      margin-bottom: 24px;
-      font-size: 17px;
+      margin-bottom: 16px;
+      font-size: clamp(14px, .95vw, 17px);
       font-weight: 950;
     }
 
     .setting-title span {
       color: #c5cace;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 750;
     }
 
     .setting-subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: #e2e5e7;
       font-weight: 900;
-      margin-bottom: 20px;
+      margin-bottom: 14px;
     }
 
     .row {
       display: grid;
-      grid-template-columns: 16px 130px minmax(0,1fr) 70px;
-      gap: 12px;
+      grid-template-columns: 14px minmax(88px, 112px) minmax(0,1fr) 42px;
+      gap: 9px;
       align-items: center;
-      min-height: 48px;
-      margin-bottom: 10px;
+      min-height: 38px;
+      margin-bottom: 7px;
       color: #d7dbde;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 850;
     }
 
     .row.wide { grid-template-columns: 16px 1fr; }
 
     .bullet {
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: var(--accent);
     }
 
     .input {
-      height: 44px;
+      height: 36px;
       border: 1px solid rgba(190,199,205,.38);
       background: rgba(15,17,19,.35);
       color: #d9dde0;
-      padding: 0 14px;
-      font-size: 15px;
+      padding: 0 10px;
+      font-size: 13px;
       font-weight: 850;
       outline: none;
     }
 
     .hint-text {
       color: #b7bdc1;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
     }
 
     .settings-section {
-      margin-top: 36px;
+      margin-top: 20px;
       padding-top: 8px;
     }
 
     .settings-section h3 {
       margin: 0 0 8px;
-      font-size: 15px;
+      font-size: 14px;
       color: #e4e6e8;
     }
 
     .section-rule {
       height: 1px;
       background: var(--line);
-      margin-bottom: 22px;
+      margin-bottom: 14px;
     }
 
     .mode {
       display: grid;
       grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 10px;
+      gap: 8px;
     }
 
     .mode button {
-      height: 42px;
+      height: 36px;
       border: 1px solid rgba(190,199,205,.38);
       background: rgba(15,17,19,.35);
       color: #c9ced1;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 900;
       cursor: pointer;
     }
@@ -505,16 +534,21 @@
       color: #fff;
     }
 
-    @media (max-width: 1500px) {
-      .layout { grid-template-columns: 220px minmax(600px, 1fr) 440px; }
+    @media (max-width: 1380px) {
+      .layout { grid-template-columns: minmax(178px, .62fr) minmax(510px, 1.75fr) minmax(340px, 1.05fr); }
       .trigger-panel { display: none; }
     }
 
     @media (max-width: 1120px) {
+      html, body { overflow: auto; }
+      .app { height: auto; min-height: 100vh; overflow: visible; }
       .topbar { grid-template-columns: 1fr; height: auto; }
       .ready { justify-self: start; }
-      .layout { grid-template-columns: 1fr; }
-      .settings { max-height: none; }
+      .layout { grid-template-columns: 1fr; height: auto; }
+      .left-panel, .trigger-panel, .settings, .center { height: auto; overflow: visible; }
+      .function-list { height: auto; grid-template-rows: none; }
+      .function-list button { min-height: 64px; }
+      .map { height: 420px; }
     }
   </style>
 </head>
