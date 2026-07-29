@@ -10,7 +10,6 @@ import os
 import random
 import sys
 import threading
-from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from statistics import mean, stdev
@@ -45,23 +44,6 @@ def _load_engine_cli():
 ENGINE_CLI = None
 SIMULATION_LOCK = threading.Lock()
 
-
-CALIBRATED_BASELINES = {
-    "segment": {
-        "obstacle": 0.00179,
-        "vehicle": 0.00142,
-        "pedestrian": 0.01036,
-        "landmark": 0.00600,
-        "surface": 0.01000,
-    },
-    "intersection": {
-        "obstacle": 0.00220,
-        "vehicle": 0.00574,
-        "pedestrian": 0.02402,
-        "landmark": 0.01000,
-        "surface": 0.01200,
-    },
-}
 
 DEFAULT_FUNCTION_PARAMS = {
     "obstacle": {
@@ -101,15 +83,6 @@ DEFAULT_FUNCTION_PARAMS = {
         "miss_rate": None,
         "feedback": {"modality": "auditory", "duration": 0.2, "frequency": 1.0, "competition": 1.0},
     },
-}
-
-FUNCTION_EVENT_MATCH = {
-    "obstacle": {"obstacle"},
-    "terrain": {"surface"},
-    "pedestrian": {"pedestrian"},
-    "vehicle": {"vehicle"},
-    "guidance": {"landmark", "surface"},
-    "other": {"landmark", "always_on"},
 }
 
 SLOT_SCOPE_FALLBACK = {
@@ -267,286 +240,6 @@ def _function_params(payload, function_key):
         feedback.get("competition"), defaults["feedback"]["competition"], low=0.0, high=5.0
     )
     return defaults
-
-
-def _scenario_event_probabilities(payload):
-    scenario = payload.get("scenario", {})
-    traffic_factor = _designer_level_factor(
-        scenario.get("traffic_density"), low=0.45, medium=1.0, high=1.8
-    )
-    crowd_factor = _designer_level_factor(
-        scenario.get("crowd_density"), low=0.55, medium=1.0, high=1.7
-    )
-    tactile_factor = _designer_level_factor(
-        scenario.get("tactile_paving"), low=0.75, medium=1.0, high=1.25
-    )
-    probabilities = json.loads(json.dumps(CALIBRATED_BASELINES))
-    for scope in probabilities:
-        probabilities[scope]["vehicle"] *= traffic_factor
-        probabilities[scope]["pedestrian"] *= crowd_factor
-        probabilities[scope]["surface"] *= tactile_factor
-        probabilities[scope]["landmark"] *= tactile_factor
-    return probabilities
-
-
-def _route_phase_for_step(step):
-    """Return a template phase; the mini-map is a rule template, not real route geometry."""
-    cycle = step % 70
-    if 28 <= cycle <= 40:
-        return "intersection"
-    return "segment"
-
-
-def _sample_events(rng, probabilities, scope):
-    events = set()
-    for trigger, probability in probabilities[scope].items():
-        if rng.random() < probability:
-            events.add(trigger)
-    return events
-
-
-def _slot_triggers_active(triggers, events):
-    if "always_on" in triggers:
-        return True
-    return any(trigger in events for trigger in triggers)
-
-
-def _function_matches_events(function_key, events, triggers):
-    if "always_on" in triggers:
-        return True
-    return bool(FUNCTION_EVENT_MATCH.get(function_key, set()) & set(events))
-
-
-def _feedback_load(params):
-    feedback = params["feedback"]
-    duration = feedback["duration"]
-    frequency = feedback["frequency"]
-    competition = feedback["competition"]
-    base = 0.28 + 0.14 * duration + 0.10 * frequency
-    modality = feedback["modality"]
-    if modality == "tactile":
-        return base * 0.75 * competition
-    if modality in {"traction", "牵引力"}:
-        return base * 0.90 * competition
-    return base * 1.15 * competition
-
-
-def _run_designer_trial(payload, seed, run_index):
-    rng = random.Random(seed + run_index)
-    np_rng = np.random.default_rng(seed + run_index)
-    compiled_slots = _compile_route_template(payload)
-    probabilities = _scenario_event_probabilities(payload)
-    trust = _device_trust_value(payload)
-    scenario_factor = _designer_level_factor(
-        payload.get("scenario", {}).get("type"), low=0.95, medium=1.0, high=1.2
-    )
-    steps = _bounded_int(payload.get("simulation", {}).get("steps"), int(180 * scenario_factor), 60, 600)
-
-    loads = []
-    risks = []
-    delays = []
-    stop_probe_count = 0
-    reactions = 0
-    recognitions = 0
-    misses = 0
-    false_alerts = 0
-    adoption_count = 0
-    high_load_count = 0
-    event_counts = {key: 0 for key in ["obstacle", "vehicle", "pedestrian", "landmark", "surface"]}
-    intervention_counts = {}
-    scope_counts = {"segment": 0, "intersection": 0}
-
-    for step in range(steps):
-        scope = _route_phase_for_step(step)
-        scope_counts[scope] += 1
-        events = _sample_events(rng, probabilities, scope)
-        for event in events:
-            event_counts[event] += 1
-        active_slots = [
-            slot for slot in compiled_slots
-            if slot["scope"] == scope and _slot_triggers_active(slot["triggers"], events)
-        ]
-
-        step_load = 0.34 + (0.28 if scope == "intersection" else 0.0)
-        step_risk = 0.14 + (0.18 if scope == "intersection" else 0.0)
-        step_delay = 0.0
-        step_has_alert = False
-
-        for slot in active_slots:
-            slot_events = set(events) | ({"always_on"} if "always_on" in slot["triggers"] else set())
-            for function_key in slot["functions"]:
-                if not _function_matches_events(function_key, slot_events, slot["triggers"]):
-                    continue
-                params = _function_params(payload, function_key)
-                recognition_rate = params["recognition_rate"]
-                if function_key == "obstacle" and "surface" in slot_events:
-                    recognition_rate = params.get("small_obstacle_rate", recognition_rate)
-                miss_rate = params["miss_rate"]
-                if miss_rate is None:
-                    miss_rate = max(0.0, 1.0 - recognition_rate)
-
-                function_detected = rng.random() < recognition_rate
-                false_alert = (not events and rng.random() < params["false_alarm_rate"])
-                if function_detected or false_alert:
-                    recognitions += int(function_detected)
-                    false_alerts += int(false_alert)
-                    step_has_alert = True
-                    intervention_counts[function_key] = intervention_counts.get(function_key, 0) + 1
-                    step_load += _feedback_load(params)
-                    adopted = rng.random() < max(0.10, trust - 0.08 * step_load)
-                    adoption_count += int(adopted)
-                    if adopted:
-                        step_risk -= 0.11 + 0.06 * recognition_rate
-                    else:
-                        step_delay += 0.10
-                elif rng.random() < miss_rate:
-                    misses += 1
-                    step_risk += 0.13
-
-        if "obstacle" in events:
-            step_risk += 0.22
-        if "vehicle" in events:
-            step_risk += 0.28 if scope == "intersection" else 0.16
-        if "pedestrian" in events:
-            step_load += 0.18 if scope == "intersection" else 0.10
-            step_risk += 0.08
-        if "surface" in events:
-            step_load += 0.14
-            step_risk += 0.10
-        if "landmark" in events:
-            step_risk -= 0.05
-
-        step_load += max(0.0, np_rng.normal(0.0, 0.035))
-        step_load = max(0.0, step_load)
-        step_risk = max(0.0, min(1.0, step_risk))
-        reaction_probability = max(0.05, min(0.95, trust + 0.35 * step_risk - 0.08 * step_load))
-        reaction = step_has_alert and (rng.random() < reaction_probability)
-        reactions += int(reaction)
-        step_delay += (0.16 if step_has_alert else 0.04) + 0.06 * step_load + 0.08 * step_risk
-        stop_probability = max(0.0, min(0.9, 0.05 + 0.55 * step_risk + 0.14 * (1.0 - trust) - 0.18 * reaction_probability))
-        if scope == "intersection":
-            stop_probability += 0.06
-        if rng.random() < stop_probability:
-            stop_probe_count += 1
-            step_delay += 0.25
-            step_load *= 0.94
-
-        high_load_count += int(step_load >= 1.45)
-        loads.append(step_load)
-        risks.append(step_risk)
-        delays.append(step_delay)
-
-    mean_load = float(mean(loads)) if loads else 0.0
-    mean_risk = float(mean(risks)) if risks else 0.0
-    mean_delay = float(mean(delays)) if delays else 0.0
-    total_delay = float(sum(delays))
-    completion_efficiency = max(0.0, min(1.0, 1.0 - total_delay / max(steps, 1) / 1.8))
-    return {
-        "runs": 1,
-        "success_rate": completion_efficiency,
-        "mean_cognitive_load": mean_load,
-        "high_load_episodes": high_load_count,
-        "risk_level": _risk_label(mean_risk),
-        "risk_mean": mean_risk,
-        "stop_probe_count": stop_probe_count,
-        "total_steps": steps,
-        "gate_passed_count": reactions,
-        "reaction_probability": reactions / max(1, sum(intervention_counts.values())),
-        "reaction_delay": mean_delay,
-        "completion_efficiency": completion_efficiency,
-        "recognition_count": recognitions,
-        "miss_count": misses,
-        "false_alert_count": false_alerts,
-        "adoption_count": adoption_count,
-        "event_counts": event_counts,
-        "intervention_counts": intervention_counts,
-        "scope_counts": scope_counts,
-        "compiled_slots": compiled_slots,
-        "calibrated_event_probabilities": probabilities,
-    }
-
-
-def _aggregate_designer_trials(trials):
-    if len(trials) == 1:
-        return trials[0]
-
-    def avg(key):
-        return float(mean(float(trial.get(key, 0.0)) for trial in trials))
-
-    risk_mean = avg("risk_mean")
-    event_counts = {}
-    intervention_counts = {}
-    for trial in trials:
-        for key, value in trial.get("event_counts", {}).items():
-            event_counts[key] = event_counts.get(key, 0) + value
-        for key, value in trial.get("intervention_counts", {}).items():
-            intervention_counts[key] = intervention_counts.get(key, 0) + value
-
-    return {
-        "runs": len(trials),
-        "success_rate": avg("success_rate"),
-        "mean_cognitive_load": avg("mean_cognitive_load"),
-        "high_load_episodes": avg("high_load_episodes"),
-        "risk_level": _risk_label(risk_mean),
-        "risk_mean": risk_mean,
-        "stop_probe_count": avg("stop_probe_count"),
-        "total_steps": avg("total_steps"),
-        "gate_passed_count": avg("gate_passed_count"),
-        "reaction_probability": avg("reaction_probability"),
-        "reaction_delay": avg("reaction_delay"),
-        "completion_efficiency": avg("completion_efficiency"),
-        "recognition_count": avg("recognition_count"),
-        "miss_count": avg("miss_count"),
-        "false_alert_count": avg("false_alert_count"),
-        "adoption_count": avg("adoption_count"),
-        "event_counts": event_counts,
-        "intervention_counts": intervention_counts,
-        "compiled_slots": trials[0].get("compiled_slots", []),
-        "calibrated_event_probabilities": trials[0].get("calibrated_event_probabilities", {}),
-    }
-
-
-def run_designer_simulation_from_payload(payload):
-    """Run the new slot-based backend without using the legacy ACT-R route engine."""
-    simulation = payload.get("simulation", {})
-    runs = _bounded_int(simulation.get("runs"), default=1, low=1, high=3)
-    seed = _bounded_int(simulation.get("seed"), default=42, low=1, high=999999)
-    trials = [_run_designer_trial(payload, seed, index) for index in range(runs)]
-    result = _aggregate_designer_trials(trials)
-
-    report_dir = BASE_DIR / "reports"
-    report_dir.mkdir(exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_path = report_dir / f"designer_backend_summary_{timestamp}.json"
-    with open(report_path, "w", encoding="utf-8") as handle:
-        json.dump(
-            {
-                "engine": "designer_slot_backend",
-                "result": result,
-                "trials": trials,
-                "received_config": payload,
-            },
-            handle,
-            ensure_ascii=False,
-            indent=2,
-        )
-
-    return {
-        "ok": True,
-        "result": result,
-        "report_path": str(report_path),
-        "applied_parameters": {
-            "engine": "designer_slot_backend",
-            "apply_mode": "global_by_scope",
-            "compiled_slots": result.get("compiled_slots", []),
-            "calibrated_event_probabilities": result.get("calibrated_event_probabilities", {}),
-        },
-        "engine_log": (
-            "New designer backend used. The map is treated as a global rule template; "
-            "segment slots apply to all route segments and intersection slots apply to all crossings."
-        ),
-        "received_config": payload,
-    }
 
 
 def _extract_familiarity(payload):
@@ -753,6 +446,144 @@ def _build_environment_loader(start_point, goal_point):
     return load_environment_from_ui
 
 
+def _has_designer_slots(payload):
+    return bool((payload.get("route_template") or {}).get("slots"))
+
+
+def _designer_slot_summary(payload):
+    """Translate the new route-template UI into legacy model parameter factors."""
+    slots = _compile_route_template(payload) if _has_designer_slots(payload) else []
+    summary = {
+        "slots": slots,
+        "function_scopes": {key: set() for key in DEFAULT_FUNCTION_PARAMS},
+        "trigger_scopes": {key: set() for key in ["obstacle", "vehicle", "pedestrian", "landmark", "surface", "always_on"]},
+        "always_on": False,
+        "auditory_weight": 0.0,
+        "tactile_weight": 0.0,
+        "manual_weight": 0.0,
+        "competition_sum": 0.0,
+        "frequency_max": 0.0,
+    }
+    for slot in slots:
+        scope = slot["scope"]
+        triggers = set(slot["triggers"])
+        for trigger in triggers:
+            summary["trigger_scopes"].setdefault(trigger, set()).add(scope)
+        if "always_on" in triggers:
+            summary["always_on"] = True
+        for function_key in slot["functions"]:
+            summary["function_scopes"].setdefault(function_key, set()).add(scope)
+            params = _function_params(payload, function_key)
+            feedback = params["feedback"]
+            weight = max(0.1, params["recognition_rate"]) * max(0.1, feedback["competition"])
+            modality = feedback["modality"]
+            if modality == "tactile":
+                summary["tactile_weight"] += weight
+            elif modality in {"traction", "牵引力"}:
+                summary["manual_weight"] += weight
+            else:
+                summary["auditory_weight"] += weight
+            summary["competition_sum"] += feedback["competition"]
+            summary["frequency_max"] = max(summary["frequency_max"], feedback["frequency"])
+    return summary
+
+
+def _scope_factor(scopes, scope):
+    return 1.0 if scope in scopes else 0.0
+
+
+def _designer_recognition(payload, function_key, *, small=False):
+    params = _function_params(payload, function_key)
+    if small and function_key == "obstacle":
+        return params.get("small_obstacle_rate", params["recognition_rate"])
+    return params["recognition_rate"]
+
+
+def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_factor, tactile_factor, trust_gap):
+    """Map new front-end route_template slots onto the existing BVI-SAS override layer."""
+    if not _has_designer_slots(payload):
+        return
+
+    summary = _designer_slot_summary(payload)
+    function_scopes = summary["function_scopes"]
+    trigger_scopes = summary["trigger_scopes"]
+
+    obstacle_scopes = function_scopes.get("obstacle", set()) & (
+        trigger_scopes.get("obstacle", set()) | trigger_scopes.get("always_on", set())
+    )
+    terrain_scopes = function_scopes.get("terrain", set()) & (
+        trigger_scopes.get("surface", set()) | trigger_scopes.get("always_on", set())
+    )
+    pedestrian_scopes = function_scopes.get("pedestrian", set()) & (
+        trigger_scopes.get("pedestrian", set()) | trigger_scopes.get("always_on", set())
+    )
+    vehicle_scopes = function_scopes.get("vehicle", set()) & (
+        trigger_scopes.get("vehicle", set()) | trigger_scopes.get("always_on", set())
+    )
+    guidance_scopes = function_scopes.get("guidance", set()) & (
+        trigger_scopes.get("landmark", set())
+        | trigger_scopes.get("surface", set())
+        | trigger_scopes.get("always_on", set())
+    )
+    other_scopes = function_scopes.get("other", set()) & (
+        trigger_scopes.get("landmark", set()) | trigger_scopes.get("always_on", set())
+    )
+
+    obstacle_rate = _designer_recognition(payload, "obstacle")
+    small_obstacle_rate = _designer_recognition(payload, "obstacle", small=True)
+    obstacle_enabled = 1.0 if obstacle_scopes else 0.0
+    terrain_enabled = 1.0 if terrain_scopes else 0.0
+    vehicle_segment = _scope_factor(vehicle_scopes, "segment")
+    vehicle_intersection = _scope_factor(vehicle_scopes, "intersection")
+    pedestrian_segment = _scope_factor(pedestrian_scopes, "segment")
+    pedestrian_intersection = _scope_factor(pedestrian_scopes, "intersection")
+    guidance_enabled = 1.0 if guidance_scopes or other_scopes else 0.0
+    guidance_strength = max(
+        _designer_recognition(payload, "guidance") if guidance_scopes else 0.0,
+        _designer_recognition(payload, "other") * 0.8 if other_scopes else 0.0,
+    )
+
+    _set_override(overrides, "CANE_OBSTACLE_PROB", 0.00179 * obstacle_rate * obstacle_enabled)
+    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(small_obstacle_rate * obstacle_enabled, terrain_enabled * tactile_factor * 0.35))
+    _set_override(overrides, "CANE_WALL_PROB", 0.00507 * obstacle_rate * obstacle_enabled)
+    _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * obstacle_rate * obstacle_enabled)
+    _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", 0.00142 * vehicle_segment * _designer_recognition(payload, "vehicle") * traffic_factor)
+    _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", 0.00574 * vehicle_intersection * _designer_recognition(payload, "vehicle") * traffic_factor)
+    _set_override(overrides, "SOUND_HORN_PROB", 0.000167 * max(vehicle_segment, vehicle_intersection) * traffic_factor)
+    _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", 0.000251 * max(vehicle_segment, vehicle_intersection) * traffic_factor)
+    _set_override(overrides, "HUMAN_ACTIVITY_PROB", 0.01036 * pedestrian_segment * _designer_recognition(payload, "pedestrian") * crowd_factor)
+    _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", 0.02402 * pedestrian_intersection * _designer_recognition(payload, "pedestrian") * crowd_factor)
+    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006 * guidance_enabled * max(guidance_strength, 0.0))
+    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030 * guidance_enabled * max(guidance_strength, 0.0))
+
+    if terrain_enabled:
+        surface_distribution = {
+            "flat_road": max(0.05, 0.78 - 0.14 * tactile_factor),
+            "uneven_natural": 0.012,
+            "slope_surface": 0.014,
+            "height_drop": 0.010,
+            "tactile_guidance": max(0.0, 0.16 * tactile_factor),
+        }
+        total_surface = sum(surface_distribution.values()) or 1.0
+        _set_override(
+            overrides,
+            "SURFACE_PROBABILITY_DISTRIBUTION",
+            {key: value / total_surface for key, value in surface_distribution.items()},
+        )
+
+    total_channel = max(
+        0.01,
+        summary["auditory_weight"] + summary["tactile_weight"] + summary["manual_weight"] + 0.20 + 0.25 * trust_gap,
+    )
+    _set_override(overrides, "ACTR_AUDITORY_SHARE", summary["auditory_weight"] / total_channel)
+    _set_override(overrides, "ACTR_TACTILE_SHARE", summary["tactile_weight"] / total_channel)
+    _set_override(overrides, "ACTR_MANUAL_SHARE", (summary["manual_weight"] + 0.20 + 0.25 * trust_gap) / total_channel)
+    if summary["always_on"]:
+        _set_override(overrides, "NAV_CYCLE_STEPS", max(2, int(5 - min(3, summary["frequency_max"]))))
+    _set_override(overrides, "ATTENTION_GATED_CENTRAL_DANGER_BOOST", 0.20 + 0.04 * min(3.0, summary["competition_sum"]))
+    _set_override(overrides, "DESIGNER_COMPILED_SLOTS", summary["slots"])
+
+
 def _derive_model_overrides(payload):
     """Map designer UI controls to model constants used by BVI-SAS."""
     overrides = {}
@@ -906,6 +737,15 @@ def _derive_model_overrides(payload):
     _set_override(overrides, "ACTR_ERROR_BOOST", {1: 1.5, 2: 2.0, 3: 2.8}.get(false_alarm, 2.0))
     _set_override(overrides, "RISK_ERROR_COEF", {1: 0.55, 2: 0.75, 3: 1.0}.get(missed_alert, 0.75))
 
+    _apply_designer_slot_overrides(
+        overrides,
+        payload,
+        traffic_factor=traffic_factor,
+        crowd_factor=crowd_factor,
+        tactile_factor=tactile_factor,
+        trust_gap=trust_gap,
+    )
+
     loader = _build_environment_loader(simulation.get("start_point"), simulation.get("goal_point"))
     if loader is not None:
         _set_override(overrides, "load_environment", loader)
@@ -945,8 +785,8 @@ def _json_safe_parameters(parameters):
 
 
 def run_simulation_from_payload(payload):
-    """Run the current designer slot backend from a web request payload."""
-    return run_designer_simulation_from_payload(payload)
+    """Run the existing BVI-SAS engine with the new designer parameter mapping."""
+    return run_legacy_simulation_from_payload(payload)
 
 
 def run_legacy_simulation_from_payload(payload):
