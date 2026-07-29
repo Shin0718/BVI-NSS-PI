@@ -1101,14 +1101,14 @@
                     <i class="designer-route-arrow vertical"></i>
                     <i class="designer-route-arrow vertical delay-1"></i>
                     <i class="designer-route-arrow vertical delay-2"></i>
-                    <div class="designer-drop-zone" data-slot="start-road" data-kind="function" style="left:18%;bottom:20%;"><span>功能</span></div>
-                    <div class="designer-drop-zone" data-slot="start-road" data-kind="trigger" style="left:18%;bottom:13%;"><span>触发</span></div>
-                    <div class="designer-drop-zone" data-slot="mid-road" data-kind="function" style="left:38%;bottom:17%;"><span>功能</span></div>
-                    <div class="designer-drop-zone" data-slot="mid-road" data-kind="trigger" style="left:38%;bottom:10%;"><span>触发</span></div>
-                    <div class="designer-drop-zone" data-slot="turn-crossing" data-kind="function" style="right:14%;bottom:20%;"><span>功能</span></div>
-                    <div class="designer-drop-zone" data-slot="turn-crossing" data-kind="trigger" style="right:14%;bottom:13%;"><span>触发</span></div>
-                    <div class="designer-drop-zone" data-slot="end-crossing" data-kind="function" style="right:22%;top:39%;"><span>功能</span></div>
-                    <div class="designer-drop-zone" data-slot="end-crossing" data-kind="trigger" style="right:22%;top:47%;"><span>触发</span></div>
+                    <div class="designer-drop-zone" data-slot="start-road" data-scope="segment" data-kind="function" style="left:18%;bottom:20%;"><span>功能</span></div>
+                    <div class="designer-drop-zone" data-slot="start-road" data-scope="segment" data-kind="trigger" style="left:18%;bottom:13%;"><span>触发</span></div>
+                    <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="function" style="left:38%;bottom:17%;"><span>功能</span></div>
+                    <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="trigger" style="left:38%;bottom:10%;"><span>触发</span></div>
+                    <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="function" style="right:14%;bottom:20%;"><span>功能</span></div>
+                    <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="trigger" style="right:14%;bottom:13%;"><span>触发</span></div>
+                    <div class="designer-drop-zone" data-slot="end-crossing" data-scope="segment" data-kind="function" style="right:22%;top:39%;"><span>功能</span></div>
+                    <div class="designer-drop-zone" data-slot="end-crossing" data-scope="segment" data-kind="trigger" style="right:22%;top:47%;"><span>触发</span></div>
                     <div class="designer-dot" style="left:12%;bottom:16%;"></div>
                     <div class="designer-dot orange" style="right:29%;top:32%;"></div>
                     <div class="designer-dot orange" style="right:30.4%;top:18%;"></div>
@@ -1471,6 +1471,82 @@
       ]
     };
 
+    const defaultDeviceParameters = {
+      obstacle: {
+        recognition_rate: 0.90,
+        small_obstacle_rate: 0.40,
+        false_alarm_rate: 0.03,
+        miss_rate: null,
+        feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1 }
+      },
+      terrain: {
+        recognition_rate: 0.75,
+        false_alarm_rate: 0.05,
+        miss_rate: null,
+        feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1 }
+      },
+      pedestrian: {
+        recognition_rate: 0.85,
+        false_alarm_rate: 0.04,
+        miss_rate: null,
+        feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1.15 }
+      },
+      vehicle: {
+        recognition_rate: 0.88,
+        false_alarm_rate: 0.03,
+        miss_rate: null,
+        feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1.2 }
+      },
+      guidance: {
+        recognition_rate: 0.82,
+        false_alarm_rate: 0.03,
+        miss_rate: null,
+        feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 0.85 }
+      },
+      other: {
+        recognition_rate: 0.72,
+        false_alarm_rate: 0.05,
+        miss_rate: null,
+        feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1 }
+      }
+    };
+
+    function collectDesignerRouteTemplate() {
+      const slotMap = new Map();
+      document.querySelectorAll(".designer-drop-zone.filled").forEach((zone) => {
+        const slotId = zone.dataset.slot;
+        if (!slotMap.has(slotId)) {
+          slotMap.set(slotId, {
+            slot_id: slotId,
+            scope: zone.dataset.scope || "segment",
+            functions: [],
+            triggers: []
+          });
+        }
+        const slot = slotMap.get(slotId);
+        const value = zone.dataset.value;
+        if (!value) return;
+        if (zone.dataset.kind === "function") {
+          slot.functions.push(value);
+        } else if (zone.dataset.kind === "trigger") {
+          slot.triggers.push(value === "none" ? "always_on" : value);
+        }
+      });
+
+      const slots = Array.from(slotMap.values())
+        .map((slot) => ({
+          ...slot,
+          functions: Array.from(new Set(slot.functions)),
+          triggers: Array.from(new Set(slot.triggers.length ? slot.triggers : ["always_on"]))
+        }))
+        .filter((slot) => slot.functions.length);
+
+      return {
+        apply_mode: "global_by_scope",
+        slots
+      };
+    }
+
     function collectSimulationConfig() {
       const railCards = document.querySelectorAll(".rail .card");
       const scenarioCard = railCards[0];
@@ -1501,6 +1577,8 @@
           activation_mode: defaultDeviceConfig.feedback.activation_mode,
           timing: defaultDeviceConfig.feedback.timing
         },
+        route_template: collectDesignerRouteTemplate(),
+        device_parameters: defaultDeviceParameters,
         walking_response: defaultDeviceConfig.walking_response,
         reference_duration: defaultDeviceConfig.reference_duration,
         cognitive_impact: defaultDeviceConfig.cognitive_impact
