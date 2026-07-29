@@ -1,6 +1,8 @@
-# BVI-SAS
+# Blind & Visually Impaired Navigation Simulation System (BVI-NSS)
 
-BVI-SAS is a local simulation tool for studying non-visual navigation by blind and visually impaired (BVI) users. The system combines a route environment, risk inference, attention gating, and ACT-R based action selection to examine how device feedback, environmental references, and cognitive load may shape walking behavior.
+BVI-NSS is a local simulation tool for studying non-visual navigation by blind and visually impaired (BVI) users. The system combines a route environment, risk inference, attention gating, and ACT-R based action selection to examine how device feedback, environmental references, and cognitive load may shape walking behavior.
+
+Current status: **Beta · Research Prototype**. The current web designer UI and backend parameter-mapping layer are connected for internal research testing.
 
 This repository is intentionally limited to the runnable system. Calibration materials, generated figures, cached map files, and previous simulation outputs are not included.
 
@@ -30,7 +32,7 @@ python server.py
 Open the local site in a browser:
 
 ```text
-http://127.0.0.1:8765
+http://127.0.0.1:8766
 ```
 
 The site runs on the user's own machine. No hosted server, account system, or cloud deployment is required.
@@ -66,7 +68,15 @@ The code was developed for Python 3.12 or later. The required Python packages ar
 
 ## Local Web Interface
 
-The local browser interface allows designers or researchers to configure scenario, device capability, feedback timing, walking response, reference duration, and cognitive-impact controls.
+The local browser interface allows designers or researchers to configure route-template intervention rules and user/context controls before running a simulation.
+
+The current designer page includes:
+
+- Product functions: obstacle detection, terrain detection, pedestrian detection, vehicle approach detection, guidance object detection, and other information detection.
+- Trigger conditions: obstacle, vehicle, pedestrian, landmark, surface change, and none.
+- Route-template slots: segment slots and intersection slots. Segment slots map to road-segment rules; the intersection slot maps only to crossing/intersection rules.
+- Device parameters: recognition strength, trigger probability, false/missed alert probability, active duration, preparation duration, feedback modality, alert duration, alert frequency, and competition factor.
+- Guidance-object targets: curb, wall, railing, tactile paving, and landmark.
 
 Start the local server from the repository root:
 
@@ -77,12 +87,35 @@ python server.py
 Then open:
 
 ```text
-http://127.0.0.1:8765
+http://127.0.0.1:8766
 ```
 
-The web interface sends the selected configuration to the local `/simulate` endpoint. The server maps the scenario, device capability, feedback timing, walking response, reference duration, and cognitive impact controls to runtime model parameters before each simulation run. Overrides are applied only for the active run and are restored afterward, so the source defaults in `BVI-SAS/` remain unchanged.
+The web interface sends the selected configuration to the local `/simulate` endpoint. The server maps the route-template slots, selected functions/triggers, user profile, scenario controls, and device parameters to runtime model parameters before each simulation run. Overrides are applied only for the active run and are restored afterward, so the source defaults in `BVI-SAS/` remain unchanged.
 
-Generated reports are written to `reports/`. Runtime outputs, map caches, and Python cache files are ignored by git.
+The backend mapping layer currently connects the designer UI to the existing simulation system. It does not replace the core ACT-R simulation engine.
+
+Generated reports are written to `reports/`. Each UI-triggered run records both simulation outputs and the frontend input/mapping context:
+
+- `sim_summary_<timestamp>.json`
+- `sim_ui_config_<timestamp>.json`
+- `sim_io_report_<timestamp>.md`
+
+Runtime outputs, map caches, and Python cache files are ignored by git.
+
+## Backend Mapping Status
+
+The current frontend-to-backend mapping is implemented and ready for beta testing:
+
+- Segment slots apply to segment-level route rules across the simulated route.
+- Intersection slots apply to crossing/intersection rules only.
+- Device trust maps to `DEVICE_TRUST` and trust-related manual confirmation burden.
+- Familiarity maps to the existing familiarity condition used by the ACT-R simulation.
+- Obstacle detection maps to obstacle and small-obstacle recognition parameters.
+- Pedestrian detection maps to pedestrian activity trigger probabilities.
+- Vehicle approach detection maps to segment or crossing vehicle-approach probabilities depending on slot scope.
+- Terrain detection maps to surface-type probability distribution parameters.
+- Guidance object detection maps selected targets to curb, wall, railing, tactile paving, and landmark-related parameters.
+- Feedback modality, alert duration, alert frequency, and competition factor affect channel load and attention-competition terms.
 
 ## Running the Simulation
 

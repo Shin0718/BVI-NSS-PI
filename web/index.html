@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BVI-SAS Designer Parameter Library</title>
+  <title>Blind &amp; Visually Impaired Navigation Simulation System (BVI-NSS)</title>
   <style>
     :root {
       --bg: #4f4f4d;
@@ -71,6 +71,31 @@
       font-size: 30px;
       font-weight: 650;
       letter-spacing: 0;
+      max-width: min(1050px, calc(100vw - 260px));
+      line-height: 1.08;
+    }
+
+    .brand-title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .beta-badge {
+      display: inline-flex;
+      align-items: center;
+      height: 26px;
+      padding: 0 10px;
+      border: 1px solid rgba(243, 109, 47, .65);
+      border-radius: 999px;
+      background: rgba(243, 109, 47, .16);
+      color: #ffb18a;
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .brand-subtitle {
@@ -976,7 +1001,10 @@
       <div class="brand">
         <img class="brand-mark" src="assets/bvi-logo.png" alt="BVI-SAS logo" />
         <div>
-          <h1 class="brand-title">BVI-SAS Designer Parameter Library</h1>
+          <div class="brand-title-row">
+            <h1 class="brand-title">Blind &amp; Visually Impaired Navigation Simulation System (BVI-NSS)</h1>
+            <span class="beta-badge">Beta · Research Prototype</span>
+          </div>
           <div class="brand-subtitle">Behavioral, Vision & Interaction - Simulation & Analysis Suite</div>
         </div>
       </div>
