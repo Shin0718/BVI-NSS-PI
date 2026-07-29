@@ -308,8 +308,7 @@
     .content-shell {
       background: var(--surface);
       border: 1px solid var(--line);
-      border-top: 0;
-      border-radius: 0 0 12px 12px;
+      border-radius: 12px;
       padding: 26px;
       min-height: 620px;
     }
@@ -320,6 +319,10 @@
 
     .tab-panel.active {
       display: block;
+    }
+
+    .legacy-config {
+      display: none;
     }
 
     .panel-grid {
@@ -1200,14 +1203,6 @@
       </aside>
 
       <section class="workspace">
-        <nav class="tabs" aria-label="Product setting tabs">
-          <button class="tab active" data-tab="device">Device Parameters</button>
-          <button class="tab" data-tab="capability">Device Capability</button>
-          <button class="tab" data-tab="feedback">Feedback & Timing</button>
-          <button class="tab" data-tab="response">Walking Response</button>
-          <button class="tab" data-tab="cognitive">Cognitive Impact</button>
-        </nav>
-
         <div class="content-shell">
           <section id="device" class="tab-panel active">
             <div class="device-designer">
@@ -1281,7 +1276,7 @@
             </div>
           </section>
 
-          <section id="capability" class="tab-panel">
+          <section id="capability" class="tab-panel legacy-config">
             <div class="capability-grid">
               <div>
                 <h2 class="subhead">Reference Detection</h2>
@@ -1303,7 +1298,7 @@
             </div>
           </section>
 
-          <section id="feedback" class="tab-panel">
+          <section id="feedback" class="tab-panel legacy-config">
             <div class="panel-grid">
               <div class="card">
                 <h2 class="subhead">Feedback Modality</h2>
@@ -1348,7 +1343,7 @@
             </div>
           </section>
 
-          <section id="response" class="tab-panel">
+          <section id="response" class="tab-panel legacy-config">
             <div class="panel-grid">
               <div class="card">
                 <h2 class="subhead">Walking Response</h2>
@@ -1413,7 +1408,7 @@
             </div>
           </section>
 
-          <section id="cognitive" class="tab-panel">
+          <section id="cognitive" class="tab-panel legacy-config">
             <div class="panel-grid">
               <div class="card">
                 <h2 class="subhead">Cognitive Impact Controls</h2>
