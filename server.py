@@ -674,24 +674,15 @@ def _derive_model_overrides(payload):
     modalities = feedback.get("modalities", [])
     timing = feedback.get("timing", [])
 
-    scenario_factor = {
-        "daily commute": 1.0,
-        "campus navigation": 0.9,
-        "street crossing": 1.35,
-        "shopping mall": 1.15,
-        "transit station": 1.3,
-        "hospital or public building": 0.95,
-        "unfamiliar outdoor route": 1.45,
-    }.get(str(scenario.get("type", "")).strip().lower(), 1.0)
     traffic_factor = _level_factor(scenario.get("traffic_density"), low=0.45, medium=1.0, high=1.8)
     crowd_factor = _level_factor(scenario.get("crowd_density"), low=0.55, medium=1.0, high=1.7)
     tactile_factor = _level_factor(scenario.get("tactile_paving"), low=0.0, medium=1.0, high=1.8)
 
     surface_distribution = {
         "flat_road": max(0.05, 0.86 - 0.18 * tactile_factor),
-        "uneven_natural": 0.006 * scenario_factor,
-        "slope_surface": 0.010 * scenario_factor,
-        "height_drop": 0.012 * scenario_factor,
+        "uneven_natural": 0.006,
+        "slope_surface": 0.010,
+        "height_drop": 0.012,
         "tactile_guidance": max(0.0, 0.12 * tactile_factor),
     }
     total_surface = sum(surface_distribution.values()) or 1.0
@@ -700,7 +691,7 @@ def _derive_model_overrides(payload):
         "SURFACE_PROBABILITY_DISTRIBUTION",
         {key: value / total_surface for key, value in surface_distribution.items()},
     )
-    _set_override(overrides, "MAX_STEPS", int(200 * scenario_factor))
+    _set_override(overrides, "MAX_STEPS", 200)
 
     obstacle_rate = _detection_rate(
         _find_named(references, "Obstacle"),

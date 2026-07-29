@@ -983,18 +983,6 @@
         <section class="card">
           <h2 class="card-title">Testing Scenario <span class="hint">?</span></h2>
           <div class="field">
-            <label for="scenarioType">Scenario Type</label>
-            <select id="scenarioType">
-              <option>Daily commute</option>
-              <option>Campus navigation</option>
-              <option>Street crossing</option>
-              <option>Shopping mall</option>
-              <option>Transit station</option>
-              <option>Hospital or public building</option>
-              <option>Unfamiliar outdoor route</option>
-            </select>
-          </div>
-          <div class="field">
             <label>Traffic Density</label>
             <div class="segmented">
               <button>Low</button><button class="active">Medium</button><button>High</button>
@@ -1068,30 +1056,30 @@
             <div class="device-designer">
               <div class="designer-shell">
                 <aside class="designer-panel designer-side">
-                  <div class="designer-head"><strong>产品功能</strong><span>function</span></div>
-                  <nav class="designer-functions" aria-label="产品功能">
-                    <button class="designer-function active" data-key="obstacle" data-kind="function" draggable="true" type="button">障碍物检测<span>Obstacle Detection</span></button>
-                    <button class="designer-function" data-key="terrain" data-kind="function" draggable="true" type="button">地势检测<span>Terrain Detection</span></button>
-                    <button class="designer-function" data-key="pedestrian" data-kind="function" draggable="true" type="button">行人检测<span>Pedestrian Detection</span></button>
-                    <button class="designer-function" data-key="vehicle" data-kind="function" draggable="true" type="button">车辆接近检测<span>Vehicle Approach Detection</span></button>
-                    <button class="designer-function" data-key="guidance" data-kind="function" draggable="true" type="button">引导物检测<span>Guidance Object Detection</span></button>
-                    <button class="designer-function" data-key="other" data-kind="function" draggable="true" type="button">其他信息检测<span>Other Information Detection</span></button>
+                  <div class="designer-head"><strong>Product Function</strong><span>function</span></div>
+                  <nav class="designer-functions" aria-label="Product Function">
+                    <button class="designer-function active" data-key="obstacle" data-kind="function" draggable="true" type="button">Obstacle Detection</button>
+                    <button class="designer-function" data-key="terrain" data-kind="function" draggable="true" type="button">Terrain Detection</button>
+                    <button class="designer-function" data-key="pedestrian" data-kind="function" draggable="true" type="button">Pedestrian Detection</button>
+                    <button class="designer-function" data-key="vehicle" data-kind="function" draggable="true" type="button">Vehicle Approach Detection</button>
+                    <button class="designer-function" data-key="guidance" data-kind="function" draggable="true" type="button">Guidance Object Detection</button>
+                    <button class="designer-function" data-key="other" data-kind="function" draggable="true" type="button">Other Information Detection</button>
                   </nav>
                 </aside>
 
                 <aside class="designer-panel designer-trigger">
-                  <div class="designer-head"><strong>触发条件</strong><span>trigger</span></div>
-                  <div class="designer-trigger-card" data-trigger="obstacle" data-kind="trigger" draggable="true">障碍物</div>
-                  <div class="designer-trigger-card" data-trigger="vehicle" data-kind="trigger" draggable="true">车辆</div>
-                  <div class="designer-trigger-card" data-trigger="pedestrian" data-kind="trigger" draggable="true">行人</div>
-                  <div class="designer-trigger-card" data-trigger="landmark" data-kind="trigger" draggable="true">地标</div>
-                  <div class="designer-trigger-card" data-trigger="surface" data-kind="trigger" draggable="true">路面变化</div>
-                  <div class="designer-trigger-card" data-trigger="none" data-kind="trigger" draggable="true">无</div>
+                  <div class="designer-head"><strong>Trigger Condition</strong><span>trigger</span></div>
+                  <div class="designer-trigger-card" data-trigger="obstacle" data-kind="trigger" draggable="true">Obstacle</div>
+                  <div class="designer-trigger-card" data-trigger="vehicle" data-kind="trigger" draggable="true">Vehicle</div>
+                  <div class="designer-trigger-card" data-trigger="pedestrian" data-kind="trigger" draggable="true">Pedestrian</div>
+                  <div class="designer-trigger-card" data-trigger="landmark" data-kind="trigger" draggable="true">Landmark</div>
+                  <div class="designer-trigger-card" data-trigger="surface" data-kind="trigger" draggable="true">Surface Change</div>
+                  <div class="designer-trigger-card" data-trigger="none" data-kind="trigger" draggable="true">None</div>
                 </aside>
 
                 <section class="designer-panel designer-map-panel">
                   <div class="designer-scenario-title">
-                    <strong>固定场景</strong>
+                    <strong>Fixed Scenario</strong>
                     <span>Fixed Scenario: Standard Urban Crossing</span>
                     <span class="designer-info">i</span>
                   </div>
@@ -1112,24 +1100,24 @@
                     <i class="designer-route-arrow vertical"></i>
                     <i class="designer-route-arrow vertical delay-1"></i>
                     <i class="designer-route-arrow vertical delay-2"></i>
-                    <div class="designer-drop-zone" data-slot="start-road" data-scope="segment" data-kind="function" style="left:18%;bottom:20%;"><span>功能</span></div>
-                    <div class="designer-drop-zone" data-slot="start-road" data-scope="segment" data-kind="trigger" style="left:18%;bottom:13%;"><span>触发</span></div>
-                    <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="function" style="left:38%;bottom:17%;"><span>功能</span></div>
-                    <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="trigger" style="left:38%;bottom:10%;"><span>触发</span></div>
-                    <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="function" style="right:14%;bottom:20%;"><span>功能</span></div>
-                    <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="trigger" style="right:14%;bottom:13%;"><span>触发</span></div>
-                    <div class="designer-drop-zone" data-slot="end-crossing" data-scope="segment" data-kind="function" style="right:22%;top:39%;"><span>功能</span></div>
-                    <div class="designer-drop-zone" data-slot="end-crossing" data-scope="segment" data-kind="trigger" style="right:22%;top:47%;"><span>触发</span></div>
+                    <div class="designer-drop-zone" data-slot="start-road" data-scope="segment" data-kind="function" style="left:18%;bottom:20%;"><span>Function</span></div>
+                    <div class="designer-drop-zone" data-slot="start-road" data-scope="segment" data-kind="trigger" style="left:18%;bottom:13%;"><span>Trigger</span></div>
+                    <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="function" style="left:38%;bottom:17%;"><span>Function</span></div>
+                    <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="trigger" style="left:38%;bottom:10%;"><span>Trigger</span></div>
+                    <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="function" style="right:14%;bottom:20%;"><span>Function</span></div>
+                    <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="trigger" style="right:14%;bottom:13%;"><span>Trigger</span></div>
+                    <div class="designer-drop-zone" data-slot="end-crossing" data-scope="segment" data-kind="function" style="right:22%;top:39%;"><span>Function</span></div>
+                    <div class="designer-drop-zone" data-slot="end-crossing" data-scope="segment" data-kind="trigger" style="right:22%;top:47%;"><span>Trigger</span></div>
                     <div class="designer-dot" style="left:12%;bottom:16%;"></div>
                     <div class="designer-dot orange" style="right:29%;top:32%;"></div>
                     <div class="designer-dot orange" style="right:30.4%;top:18%;"></div>
-                    <div class="designer-pill start" style="left:7%;bottom:19%;">起点 Start</div>
-                    <div class="designer-pill" style="right:17%;top:18%;">终点 End</div>
+                    <div class="designer-pill start" style="left:7%;bottom:19%;">Start</div>
+                    <div class="designer-pill" style="right:17%;top:18%;">End</div>
                   </div>
                   <div class="designer-legend">
-                    <span>○ 起点 Start</span>
-                    <span>⚑ 终点 End</span>
-                    <span><i class="designer-line-key"></i>路线 Route</span>
+                    <span>○ Start</span>
+                    <span>⚑ End</span>
+                    <span><i class="designer-line-key"></i>Route</span>
                   </div>
                 </section>
               </div>
@@ -1176,51 +1164,51 @@
     <section class="device-modal" id="deviceSettingsModal" role="dialog" aria-modal="true" aria-labelledby="deviceModalTitle">
       <div class="device-modal-head">
         <div>
-          <strong id="deviceModalTitle" data-designer-title-cn>障碍物检测</strong>
-          <span data-designer-title-en>Obstacle Detection</span>
+          <strong id="deviceModalTitle" data-designer-title-cn>Obstacle Detection</strong>
+          <span data-designer-title-en>Device Parameters</span>
         </div>
         <button class="device-modal-close" id="deviceModalClose" type="button" aria-label="Close">×</button>
       </div>
-      <div class="designer-setting-subtitle" data-designer-subtitle>范围、类别、概率、作用时间、反馈参数</div>
+      <div class="designer-setting-subtitle" data-designer-subtitle>Range, category, probability, active time, and feedback parameters</div>
 
-      <div class="designer-setting-row wide designer-trigger-row"><span class="designer-bullet"></span><div>提醒时机： <span data-designer-trigger-name>障碍物</span></div></div>
-      <div class="designer-setting-row designer-guidance-only"><span class="designer-bullet"></span><label>提醒时机</label><div class="designer-guidance-targets" data-designer-guidance-targets>
-        <button class="active" type="button" data-guidance-target="curb">路缘</button>
-        <button class="active" type="button" data-guidance-target="wall">墙</button>
-        <button class="active" type="button" data-guidance-target="railing">栏杆</button>
-        <button class="active" type="button" data-guidance-target="tactile_guidance">盲道</button>
-        <button class="active" type="button" data-guidance-target="landmark">地标</button>
+      <div class="designer-setting-row wide designer-trigger-row"><span class="designer-bullet"></span><div>Alert Timing: <span data-designer-trigger-name>Obstacle</span></div></div>
+      <div class="designer-setting-row designer-guidance-only"><span class="designer-bullet"></span><label>Alert Timing</label><div class="designer-guidance-targets" data-designer-guidance-targets>
+        <button class="active" type="button" data-guidance-target="curb">Curb</button>
+        <button class="active" type="button" data-guidance-target="wall">Wall</button>
+        <button class="active" type="button" data-guidance-target="railing">Railing</button>
+        <button class="active" type="button" data-guidance-target="tactile_guidance">Tactile Paving</button>
+        <button class="active" type="button" data-guidance-target="landmark">Landmark</button>
       </div><span></span></div>
-      <div class="designer-setting-row designer-terrain-only"><span class="designer-bullet"></span><label>地面类型</label><div class="designer-terrain-types" data-designer-terrain-types>
-        <button class="active" type="button">路口</button>
-        <button type="button">平整路面</button>
-        <button type="button">盲道</button>
-        <button type="button">不平整自然路面</button>
-        <button type="button">坡度路面</button>
-        <button type="button">高度落差路面</button>
+      <div class="designer-setting-row designer-terrain-only"><span class="designer-bullet"></span><label>Surface Type</label><div class="designer-terrain-types" data-designer-terrain-types>
+        <button class="active" type="button">Intersection</button>
+        <button type="button">Flat Road</button>
+        <button type="button">Tactile Paving</button>
+        <button type="button">Uneven Natural Surface</button>
+        <button type="button">Slope Surface</button>
+        <button type="button">Height Drop Surface</button>
       </div><span></span></div>
-      <div class="designer-setting-row wide designer-generic-only"><span class="designer-bullet"></span><div data-designer-simulator>障碍物识别范围模拟器</div></div>
-      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>识别范围</label><div class="designer-static-value" data-designer-range>默认</div><span></span></div>
-      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>范围影响系数</label><input class="designer-input" data-designer-param="recognition_rate" data-designer-factor /><span></span></div>
-      <div class="designer-setting-row designer-other-only"><span></span><label>模拟概率</label><input class="designer-input" data-designer-param="recognition_rate" /><span></span></div>
-      <div class="designer-setting-row"><span></span><label>作用时长</label><input class="designer-input" data-designer-param="action_duration" /><span></span></div>
-      <div class="designer-setting-row"><span></span><label>准备时长</label><input class="designer-input" data-designer-param="preparation_duration" /><span></span></div>
-      <div class="designer-setting-row wide designer-generic-only designer-category-only"><span class="designer-bullet"></span><div data-designer-category-simulator>障碍物类别触发模拟器（除盲杖外）</div></div>
-      <div class="designer-setting-row designer-generic-only designer-category-only"><span></span><label>模拟概率</label><input class="designer-input" data-designer-param="category_trigger_prob" /><span class="designer-hint-text">0~1</span></div>
-      <div class="designer-setting-row"><span class="designer-bullet"></span><label>误报漏报概率</label><input class="designer-input" data-designer-param="false_alarm_rate" /><span class="designer-hint-text">0~1</span></div>
+      <div class="designer-setting-row wide designer-generic-only"><span class="designer-bullet"></span><div data-designer-simulator>Obstacle recognition range simulator</div></div>
+      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>Recognition Range</label><div class="designer-static-value" data-designer-range>Default</div><span></span></div>
+      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>Range Impact Factor</label><input class="designer-input" data-designer-param="recognition_rate" data-designer-factor /><span></span></div>
+      <div class="designer-setting-row designer-other-only"><span></span><label>Simulation Probability</label><input class="designer-input" data-designer-param="recognition_rate" /><span></span></div>
+      <div class="designer-setting-row"><span></span><label>Active Duration</label><input class="designer-input" data-designer-param="action_duration" /><span></span></div>
+      <div class="designer-setting-row"><span></span><label>Preparation Duration</label><input class="designer-input" data-designer-param="preparation_duration" /><span></span></div>
+      <div class="designer-setting-row wide designer-generic-only designer-category-only"><span class="designer-bullet"></span><div data-designer-category-simulator>Obstacle category trigger simulator, excluding cane detection</div></div>
+      <div class="designer-setting-row designer-generic-only designer-category-only"><span></span><label>Simulation Probability</label><input class="designer-input" data-designer-param="category_trigger_prob" /><span class="designer-hint-text">0~1</span></div>
+      <div class="designer-setting-row"><span class="designer-bullet"></span><label>False/Missed Alert Probability</label><input class="designer-input" data-designer-param="false_alarm_rate" /><span class="designer-hint-text">0~1</span></div>
 
       <div class="designer-settings-section">
-        <h3>反馈参数</h3>
+        <h3>Feedback Parameters</h3>
         <div class="designer-section-rule"></div>
-        <div class="designer-setting-row wide"><span class="designer-bullet"></span><div>模态类型</div></div>
+        <div class="designer-setting-row wide"><span class="designer-bullet"></span><div>Feedback Modality</div></div>
         <div class="designer-mode">
-          <button class="active" type="button" data-feedback-modality="auditory">听觉</button>
-          <button type="button" data-feedback-modality="tactile">触觉</button>
-          <button type="button" data-feedback-modality="traction">牵引力</button>
+          <button class="active" type="button" data-feedback-modality="auditory">Auditory</button>
+          <button type="button" data-feedback-modality="tactile">Tactile</button>
+          <button type="button" data-feedback-modality="traction">Traction</button>
         </div>
-        <div class="designer-setting-row"><span class="designer-bullet"></span><label>提醒时长</label><input class="designer-input" data-designer-param="feedback.duration" /><span></span></div>
-        <div class="designer-setting-row"><span class="designer-bullet"></span><label>提醒频率</label><input class="designer-input" data-designer-param="feedback.frequency" /><span></span></div>
-        <div class="designer-setting-row"><span class="designer-bullet"></span><label>竞争系数</label><input class="designer-input" data-designer-param="feedback.competition" /><span></span></div>
+        <div class="designer-setting-row"><span class="designer-bullet"></span><label>Alert Duration</label><input class="designer-input" data-designer-param="feedback.duration" /><span></span></div>
+        <div class="designer-setting-row"><span class="designer-bullet"></span><label>Alert Frequency</label><input class="designer-input" data-designer-param="feedback.frequency" /><span></span></div>
+        <div class="designer-setting-row"><span class="designer-bullet"></span><label>Competition Factor</label><input class="designer-input" data-designer-param="feedback.competition" /><span></span></div>
       </div>
     </section>
   </div>
@@ -1245,35 +1233,35 @@
 
     const designerPresets = {
       obstacle: {
-        cn: "障碍物检测", en: "Obstacle Detection", subtitle: "范围、类别、概率、作用时间、反馈参数",
-        trigger: "障碍物", simulator: "障碍物识别范围模拟器", range: "默认", factor: "",
-        categorySimulator: "障碍物类别触发模拟器（除盲杖外）"
+        cn: "Obstacle Detection", en: "Device Parameters", subtitle: "Range, category, probability, active time, and feedback parameters",
+        trigger: "Obstacle", simulator: "Obstacle recognition range simulator", range: "Default", factor: "",
+        categorySimulator: "Obstacle category trigger simulator, excluding cane detection"
       },
       terrain: {
-        cn: "地势检测", en: "Terrain Detection", subtitle: "地面类型、概率、作用时间、反馈参数",
-        trigger: "地面类型", simulator: "地面类型触发模拟器",
-        range: "路口 / 平整路面 / 盲道 / 不平整自然路面 / 坡度路面 / 高度落差路面",
-        factor: "", categorySimulator: "地面类型概率触发模拟器"
+        cn: "Terrain Detection", en: "Device Parameters", subtitle: "Surface type, probability, active time, and feedback parameters",
+        trigger: "Surface Type", simulator: "Surface type trigger simulator",
+        range: "Intersection / Flat Road / Tactile Paving / Uneven Natural Surface / Slope Surface / Height Drop Surface",
+        factor: "", categorySimulator: "Surface type probability trigger simulator"
       },
       pedestrian: {
-        cn: "行人检测", en: "Pedestrian Detection", subtitle: "行人触发、识别范围、作用时间、反馈参数",
-        trigger: "行人", simulator: "行人触发模拟器", range: "默认", factor: "",
-        categorySimulator: "行人类别概率触发模拟器", showCategory: false
+        cn: "Pedestrian Detection", en: "Device Parameters", subtitle: "Pedestrian trigger, recognition range, active time, and feedback parameters",
+        trigger: "Pedestrian", simulator: "Pedestrian trigger simulator", range: "Default", factor: "",
+        categorySimulator: "Pedestrian category probability trigger simulator", showCategory: false
       },
       vehicle: {
-        cn: "车辆接近检测", en: "Vehicle Approach Detection", subtitle: "车辆触发、识别范围、作用时间、反馈参数",
-        trigger: "车辆接近", simulator: "车辆触发模拟器", range: "默认", factor: "",
-        categorySimulator: "车辆类别概率触发模拟器", showCategory: false
+        cn: "Vehicle Approach Detection", en: "Device Parameters", subtitle: "Vehicle trigger, recognition range, active time, and feedback parameters",
+        trigger: "Vehicle Approach", simulator: "Vehicle trigger simulator", range: "Default", factor: "",
+        categorySimulator: "Vehicle category probability trigger simulator", showCategory: false
       },
       guidance: {
-        cn: "引导物检测", en: "Guidance Object Detection", subtitle: "引导物触发、识别范围、作用时间、反馈参数",
-        trigger: "引导物", simulator: "引导物触发模拟器", range: "默认", factor: "",
-        categorySimulator: "引导物类别概率触发模拟器", showCategory: false
+        cn: "Guidance Object Detection", en: "Device Parameters", subtitle: "Guidance-object trigger, recognition range, active time, and feedback parameters",
+        trigger: "Guidance Object", simulator: "Guidance-object trigger simulator", range: "Default", factor: "",
+        categorySimulator: "Guidance-object category probability trigger simulator", showCategory: false
       },
       other: {
-        cn: "其他信息检测", en: "Other Information Detection", subtitle: "其他物体触发、概率、作用时间、反馈参数",
-        trigger: "其他信息", simulator: "其他物体触发模拟器", range: "默认", factor: "",
-        categorySimulator: "其他信息类别概率触发模拟器", showCategory: false
+        cn: "Other Information Detection", en: "Device Parameters", subtitle: "Other information trigger, probability, active time, and feedback parameters",
+        trigger: "Other Information", simulator: "Other object trigger simulator", range: "Default", factor: "",
+        categorySimulator: "Other information category probability trigger simulator", showCategory: false
       }
     };
 
@@ -1401,7 +1389,7 @@
       delete clone.dataset.label;
       clone.dataset.extra = "true";
       clone.setAttribute("style", shiftedDesignerPosition(zone));
-      clone.querySelector("span").textContent = clone.dataset.kind === "function" ? "功能" : "触发";
+      clone.querySelector("span").textContent = clone.dataset.kind === "function" ? "Function" : "Trigger";
       zone.after(clone);
       bindDesignerDropZone(clone);
     }
@@ -1451,7 +1439,7 @@
         delete zone.dataset.value;
         delete zone.dataset.label;
         zone.classList.remove("filled");
-        zone.querySelector("span").textContent = zone.dataset.kind === "function" ? "功能" : "触发";
+        zone.querySelector("span").textContent = zone.dataset.kind === "function" ? "Function" : "Trigger";
       });
     }
 
@@ -1672,7 +1660,6 @@
 
       return {
         scenario: {
-          type: document.getElementById("scenarioType").value,
           traffic_density: activeText(scenarioCard.querySelectorAll(".segmented")[0]),
           crowd_density: activeText(scenarioCard.querySelectorAll(".segmented")[1]),
           tactile_paving: activeText(scenarioCard.querySelectorAll(".segmented")[2])
