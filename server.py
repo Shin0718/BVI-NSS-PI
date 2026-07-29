@@ -75,6 +75,7 @@ DEFAULT_FUNCTION_PARAMS = {
         "recognition_rate": 0.82,
         "false_alarm_rate": 0.03,
         "miss_rate": None,
+        "targets": ["curb", "wall", "railing", "tactile_guidance", "landmark"],
         "feedback": {"modality": "auditory", "duration": 0.2, "frequency": 1.0, "competition": 0.85},
     },
     "other": {
@@ -239,6 +240,32 @@ def _function_params(payload, function_key):
     defaults["feedback"]["competition"] = _bounded_float(
         feedback.get("competition"), defaults["feedback"]["competition"], low=0.0, high=5.0
     )
+    if "targets" in defaults:
+        target_aliases = {
+            "curb": "curb",
+            "路缘": "curb",
+            "wall": "wall",
+            "墙": "wall",
+            "railing": "railing",
+            "栏杆": "railing",
+            "tactile": "tactile_guidance",
+            "tactile_guidance": "tactile_guidance",
+            "blind_path": "tactile_guidance",
+            "盲道": "tactile_guidance",
+            "提示路面": "tactile_guidance",
+            "landmark": "landmark",
+            "地标": "landmark",
+        }
+        raw_targets = raw.get("targets")
+        if isinstance(raw_targets, str):
+            raw_targets = [raw_targets]
+        if isinstance(raw_targets, list):
+            normalized_targets = []
+            for target in raw_targets:
+                target_key = target_aliases.get(str(target).strip().lower()) or target_aliases.get(str(target).strip())
+                if target_key and target_key not in normalized_targets:
+                    normalized_targets.append(target_key)
+            defaults["targets"] = normalized_targets
     return defaults
 
 
@@ -520,11 +547,10 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
     vehicle_scopes = function_scopes.get("vehicle", set()) & (
         trigger_scopes.get("vehicle", set()) | trigger_scopes.get("always_on", set())
     )
-    guidance_scopes = function_scopes.get("guidance", set()) & (
-        trigger_scopes.get("landmark", set())
-        | trigger_scopes.get("surface", set())
-        | trigger_scopes.get("always_on", set())
-    )
+    active_trigger_scopes = set()
+    for scopes in trigger_scopes.values():
+        active_trigger_scopes |= scopes
+    guidance_scopes = function_scopes.get("guidance", set()) & active_trigger_scopes
     other_scopes = function_scopes.get("other", set()) & (
         trigger_scopes.get("landmark", set()) | trigger_scopes.get("always_on", set())
     )
@@ -537,32 +563,37 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
     vehicle_intersection = _scope_factor(vehicle_scopes, "intersection")
     pedestrian_segment = _scope_factor(pedestrian_scopes, "segment")
     pedestrian_intersection = _scope_factor(pedestrian_scopes, "intersection")
-    guidance_enabled = 1.0 if guidance_scopes or other_scopes else 0.0
-    guidance_strength = max(
-        _designer_recognition(payload, "guidance") if guidance_scopes else 0.0,
-        _designer_recognition(payload, "other") * 0.8 if other_scopes else 0.0,
-    )
+    guidance_params = _function_params(payload, "guidance")
+    guidance_targets = set(guidance_params.get("targets") or [])
+    guidance_strength = _designer_recognition(payload, "guidance") if guidance_scopes else 0.0
+    other_strength = _designer_recognition(payload, "other") * 0.8 if other_scopes else 0.0
+    curb_guidance = guidance_strength if "curb" in guidance_targets else 0.0
+    wall_guidance = guidance_strength if "wall" in guidance_targets else 0.0
+    railing_guidance = guidance_strength if "railing" in guidance_targets else 0.0
+    tactile_guidance = guidance_strength if "tactile_guidance" in guidance_targets else 0.0
+    landmark_guidance = guidance_strength if "landmark" in guidance_targets else 0.0
 
     _set_override(overrides, "CANE_OBSTACLE_PROB", 0.00179 * obstacle_rate * obstacle_enabled)
-    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(small_obstacle_rate * obstacle_enabled, terrain_enabled * tactile_factor * 0.35))
-    _set_override(overrides, "CANE_WALL_PROB", 0.00507 * obstacle_rate * obstacle_enabled)
-    _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * obstacle_rate * obstacle_enabled)
+    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(small_obstacle_rate * obstacle_enabled, terrain_enabled * tactile_factor * 0.35, curb_guidance))
+    _set_override(overrides, "CANE_WALL_PROB", 0.00507 * wall_guidance)
+    _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * railing_guidance)
     _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", 0.00142 * vehicle_segment * _designer_recognition(payload, "vehicle") * traffic_factor)
     _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", 0.00574 * vehicle_intersection * _designer_recognition(payload, "vehicle") * traffic_factor)
     _set_override(overrides, "SOUND_HORN_PROB", 0.000167 * max(vehicle_segment, vehicle_intersection) * traffic_factor)
     _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", 0.000251 * max(vehicle_segment, vehicle_intersection) * traffic_factor)
     _set_override(overrides, "HUMAN_ACTIVITY_PROB", 0.01036 * pedestrian_segment * _designer_recognition(payload, "pedestrian") * crowd_factor)
     _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", 0.02402 * pedestrian_intersection * _designer_recognition(payload, "pedestrian") * crowd_factor)
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006 * guidance_enabled * max(guidance_strength, 0.0))
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030 * guidance_enabled * max(guidance_strength, 0.0))
+    landmark_strength = max(landmark_guidance, other_strength)
+    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006 * landmark_strength)
+    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030 * landmark_strength)
 
-    if terrain_enabled:
+    if terrain_enabled or tactile_guidance:
         surface_distribution = {
-            "flat_road": max(0.05, 0.78 - 0.14 * tactile_factor),
-            "uneven_natural": 0.012,
-            "slope_surface": 0.014,
-            "height_drop": 0.010,
-            "tactile_guidance": max(0.0, 0.16 * tactile_factor),
+            "flat_road": max(0.05, 0.78 - 0.14 * tactile_factor - 0.10 * tactile_guidance),
+            "uneven_natural": 0.012 if terrain_enabled else 0.006,
+            "slope_surface": 0.014 if terrain_enabled else 0.010,
+            "height_drop": 0.010 if terrain_enabled else 0.006,
+            "tactile_guidance": max(0.0, 0.16 * tactile_factor + 0.18 * tactile_guidance),
         }
         total_surface = sum(surface_distribution.values()) or 1.0
         _set_override(
@@ -582,6 +613,7 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
         _set_override(overrides, "NAV_CYCLE_STEPS", max(2, int(5 - min(3, summary["frequency_max"]))))
     _set_override(overrides, "ATTENTION_GATED_CENTRAL_DANGER_BOOST", 0.20 + 0.04 * min(3.0, summary["competition_sum"]))
     _set_override(overrides, "DESIGNER_COMPILED_SLOTS", summary["slots"])
+    _set_override(overrides, "DESIGNER_GUIDANCE_TARGETS", sorted(guidance_targets))
 
 
 def _derive_model_overrides(payload):

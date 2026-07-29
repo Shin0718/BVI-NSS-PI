@@ -893,7 +893,8 @@
     }
 
     .designer-mode,
-    .designer-terrain-types {
+    .designer-terrain-types,
+    .designer-guidance-targets {
       display: grid;
       gap: 8px;
     }
@@ -908,8 +909,14 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .designer-guidance-targets {
+      grid-column: 3 / 5;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
     .designer-mode button,
-    .designer-terrain-types button {
+    .designer-terrain-types button,
+    .designer-guidance-targets button {
       min-height: 34px;
       border: 1px solid rgba(190,199,205,.42);
       background: rgba(15,17,19,.35);
@@ -921,19 +928,23 @@
     }
 
     .designer-mode button.active,
-    .designer-terrain-types button.active {
+    .designer-terrain-types button.active,
+    .designer-guidance-targets button.active {
       background: var(--accent);
       border-color: var(--accent);
       color: #fff;
     }
 
     .designer-terrain-only,
+    .designer-guidance-only,
     .designer-other-only {
       display: none;
     }
 
     .device-modal.terrain-mode .designer-generic-only { display: none; }
     .device-modal.terrain-mode .designer-terrain-only { display: grid; }
+    .device-modal.guidance-mode .designer-trigger-row { display: none; }
+    .device-modal.guidance-mode .designer-guidance-only { display: grid; }
     .device-modal.hide-category .designer-category-only { display: none; }
     .device-modal.other-mode .designer-range-only { display: none; }
     .device-modal.other-mode .designer-other-only { display: grid; }
@@ -1172,7 +1183,14 @@
       </div>
       <div class="designer-setting-subtitle" data-designer-subtitle>范围、类别、概率、作用时间、反馈参数</div>
 
-      <div class="designer-setting-row wide"><span class="designer-bullet"></span><div>提醒时机： <span data-designer-trigger-name>障碍物</span></div></div>
+      <div class="designer-setting-row wide designer-trigger-row"><span class="designer-bullet"></span><div>提醒时机： <span data-designer-trigger-name>障碍物</span></div></div>
+      <div class="designer-setting-row designer-guidance-only"><span class="designer-bullet"></span><label>提醒时机</label><div class="designer-guidance-targets" data-designer-guidance-targets>
+        <button class="active" type="button" data-guidance-target="curb">路缘</button>
+        <button class="active" type="button" data-guidance-target="wall">墙</button>
+        <button class="active" type="button" data-guidance-target="railing">栏杆</button>
+        <button class="active" type="button" data-guidance-target="tactile_guidance">盲道</button>
+        <button class="active" type="button" data-guidance-target="landmark">地标</button>
+      </div><span></span></div>
       <div class="designer-setting-row designer-terrain-only"><span class="designer-bullet"></span><label>地面类型</label><div class="designer-terrain-types" data-designer-terrain-types>
         <button class="active" type="button">路口</button>
         <button type="button">平整路面</button>
@@ -1265,6 +1283,7 @@
     function setDesignerPreset(key) {
       const preset = designerPresets[key] || designerPresets.obstacle;
       deviceSettingsModal.classList.toggle("terrain-mode", key === "terrain");
+      deviceSettingsModal.classList.toggle("guidance-mode", key === "guidance");
       deviceSettingsModal.classList.toggle("other-mode", key === "other");
       deviceSettingsModal.classList.toggle("hide-category", preset.showCategory === false);
       document.querySelector("[data-designer-title-cn]").textContent = preset.cn;
@@ -1308,6 +1327,12 @@
       button.addEventListener("click", () => {
         button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
         button.classList.add("active");
+      });
+    });
+
+    document.querySelectorAll(".designer-guidance-targets button").forEach((button) => {
+      button.addEventListener("click", () => {
+        button.classList.toggle("active");
       });
     });
 
@@ -1501,6 +1526,7 @@
         recognition_rate: 0.82,
         false_alarm_rate: 0.03,
         miss_rate: null,
+        targets: ["curb", "wall", "railing", "tactile_guidance", "landmark"],
         feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 0.85 }
       },
       other: {
@@ -1547,6 +1573,19 @@
       };
     }
 
+    function selectedGuidanceTargets() {
+      const targets = Array.from(document.querySelectorAll(".designer-guidance-targets button.active"))
+        .map((button) => button.dataset.guidanceTarget)
+        .filter(Boolean);
+      return Array.from(new Set(targets));
+    }
+
+    function collectDeviceParameters() {
+      const parameters = JSON.parse(JSON.stringify(defaultDeviceParameters));
+      parameters.guidance.targets = selectedGuidanceTargets();
+      return parameters;
+    }
+
     function collectSimulationConfig() {
       const railCards = document.querySelectorAll(".rail .card");
       const scenarioCard = railCards[0];
@@ -1578,7 +1617,7 @@
           timing: defaultDeviceConfig.feedback.timing
         },
         route_template: collectDesignerRouteTemplate(),
-        device_parameters: defaultDeviceParameters,
+        device_parameters: collectDeviceParameters(),
         walking_response: defaultDeviceConfig.walking_response,
         reference_duration: defaultDeviceConfig.reference_duration,
         cognitive_impact: defaultDeviceConfig.cognitive_impact
