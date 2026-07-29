@@ -1715,7 +1715,9 @@
       document.getElementById("metricHighLoad").textContent = result.high_load_episodes;
       document.getElementById("metricRisk").textContent = result.risk_level;
       document.getElementById("metricProbe").textContent = Number(result.stop_probe_count).toFixed(1).replace(".0", "");
-      document.getElementById("metricReportPath").textContent = `Report: ${response.report_path}`;
+      const configLine = response.config_path ? ` | Config: ${response.config_path}` : "";
+      const ioLine = response.io_report_path ? ` | IO: ${response.io_report_path}` : "";
+      document.getElementById("metricReportPath").textContent = `Report: ${response.report_path}${configLine}${ioLine}`;
       const routePreview = document.getElementById("routePreview");
       const routeMapImage = document.getElementById("routeMapImage");
       const actrPreview = document.getElementById("actrPreview");

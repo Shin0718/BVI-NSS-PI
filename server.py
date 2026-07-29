@@ -858,6 +858,40 @@ def _json_safe_parameters(parameters):
     return safe_values
 
 
+def _save_ui_run_config(report_path, payload, applied_parameters, result):
+    """Persist the designer payload and output that produced a simulation report."""
+    report_path = Path(report_path)
+    timestamp = report_path.stem.replace("sim_summary_", "")
+    config_path = report_path.with_name(f"sim_ui_config_{timestamp}.json")
+    io_report_path = report_path.with_name(f"sim_io_report_{timestamp}.md")
+    safe_applied_parameters = _json_safe_parameters(applied_parameters)
+    config = {
+        "summary_report": str(report_path),
+        "io_report": str(io_report_path),
+        "received_config": payload,
+        "applied_parameters": safe_applied_parameters,
+        "output_preview": result,
+    }
+    with config_path.open("w", encoding="utf-8") as handle:
+        json.dump(config, handle, ensure_ascii=False, indent=2)
+    with io_report_path.open("w", encoding="utf-8") as handle:
+        handle.write(f"# BVI-SAS UI Input/Output Report\n\n")
+        handle.write(f"- Summary report: `{report_path}`\n")
+        handle.write(f"- UI config JSON: `{config_path}`\n\n")
+        handle.write("## Output Preview\n\n")
+        for key, value in result.items():
+            handle.write(f"- `{key}`: {value}\n")
+        handle.write("\n## Received Frontend Config\n\n")
+        handle.write("```json\n")
+        handle.write(json.dumps(payload, ensure_ascii=False, indent=2))
+        handle.write("\n```\n\n")
+        handle.write("## Applied Legacy Parameter Overrides\n\n")
+        handle.write("```json\n")
+        handle.write(json.dumps(safe_applied_parameters, ensure_ascii=False, indent=2))
+        handle.write("\n```\n")
+    return config_path, io_report_path
+
+
 def run_simulation_from_payload(payload):
     """Run the existing BVI-SAS engine with the new designer parameter mapping."""
     return run_legacy_simulation_from_payload(payload)
@@ -894,11 +928,16 @@ def run_legacy_simulation_from_payload(payload):
                         summary = json.load(handle)
                     result = _summarize_single_run(summary)
                     report_path = summary_path
+            config_path, io_report_path = _save_ui_run_config(
+                report_path, payload, applied_parameters, result
+            )
 
     return {
         "ok": True,
         "result": result,
         "report_path": str(report_path),
+        "config_path": str(config_path),
+        "io_report_path": str(io_report_path),
         "applied_parameters": _json_safe_parameters(applied_parameters),
         "engine_log": log_buffer.getvalue()[-4000:],
         "received_config": payload,
