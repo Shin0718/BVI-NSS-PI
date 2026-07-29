@@ -1201,26 +1201,26 @@
       </div><span></span></div>
       <div class="designer-setting-row wide designer-generic-only"><span class="designer-bullet"></span><div data-designer-simulator>障碍物识别范围模拟器</div></div>
       <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>识别范围</label><div class="designer-static-value" data-designer-range>默认</div><span></span></div>
-      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>范围影响系数</label><input class="designer-input" data-designer-factor /><span></span></div>
-      <div class="designer-setting-row designer-other-only"><span></span><label>模拟概率</label><input class="designer-input" /><span></span></div>
-      <div class="designer-setting-row"><span></span><label>作用时长</label><input class="designer-input" /><span></span></div>
-      <div class="designer-setting-row"><span></span><label>准备时长</label><input class="designer-input" /><span></span></div>
+      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>范围影响系数</label><input class="designer-input" data-designer-param="recognition_rate" data-designer-factor /><span></span></div>
+      <div class="designer-setting-row designer-other-only"><span></span><label>模拟概率</label><input class="designer-input" data-designer-param="recognition_rate" /><span></span></div>
+      <div class="designer-setting-row"><span></span><label>作用时长</label><input class="designer-input" data-designer-param="action_duration" /><span></span></div>
+      <div class="designer-setting-row"><span></span><label>准备时长</label><input class="designer-input" data-designer-param="preparation_duration" /><span></span></div>
       <div class="designer-setting-row wide designer-generic-only designer-category-only"><span class="designer-bullet"></span><div data-designer-category-simulator>障碍物类别触发模拟器（除盲杖外）</div></div>
-      <div class="designer-setting-row designer-generic-only designer-category-only"><span></span><label>模拟概率</label><input class="designer-input" /><span class="designer-hint-text">0~1</span></div>
-      <div class="designer-setting-row"><span class="designer-bullet"></span><label>误报漏报概率</label><input class="designer-input" /><span class="designer-hint-text">0~1</span></div>
+      <div class="designer-setting-row designer-generic-only designer-category-only"><span></span><label>模拟概率</label><input class="designer-input" data-designer-param="category_trigger_prob" /><span class="designer-hint-text">0~1</span></div>
+      <div class="designer-setting-row"><span class="designer-bullet"></span><label>误报漏报概率</label><input class="designer-input" data-designer-param="false_alarm_rate" /><span class="designer-hint-text">0~1</span></div>
 
       <div class="designer-settings-section">
         <h3>反馈参数</h3>
         <div class="designer-section-rule"></div>
         <div class="designer-setting-row wide"><span class="designer-bullet"></span><div>模态类型</div></div>
         <div class="designer-mode">
-          <button class="active" type="button">听觉</button>
-          <button type="button">触觉</button>
-          <button type="button">牵引力</button>
+          <button class="active" type="button" data-feedback-modality="auditory">听觉</button>
+          <button type="button" data-feedback-modality="tactile">触觉</button>
+          <button type="button" data-feedback-modality="traction">牵引力</button>
         </div>
-        <div class="designer-setting-row"><span class="designer-bullet"></span><label>提醒时长</label><input class="designer-input" /><span></span></div>
-        <div class="designer-setting-row"><span class="designer-bullet"></span><label>提醒频率</label><input class="designer-input" /><span></span></div>
-        <div class="designer-setting-row"><span class="designer-bullet"></span><label>竞争系数</label><input class="designer-input" /><span></span></div>
+        <div class="designer-setting-row"><span class="designer-bullet"></span><label>提醒时长</label><input class="designer-input" data-designer-param="feedback.duration" /><span></span></div>
+        <div class="designer-setting-row"><span class="designer-bullet"></span><label>提醒频率</label><input class="designer-input" data-designer-param="feedback.frequency" /><span></span></div>
+        <div class="designer-setting-row"><span class="designer-bullet"></span><label>竞争系数</label><input class="designer-input" data-designer-param="feedback.competition" /><span></span></div>
       </div>
     </section>
   </div>
@@ -1282,6 +1282,7 @@
 
     function setDesignerPreset(key) {
       const preset = designerPresets[key] || designerPresets.obstacle;
+      activeDesignerKey = designerPresets[key] ? key : "obstacle";
       deviceSettingsModal.classList.toggle("terrain-mode", key === "terrain");
       deviceSettingsModal.classList.toggle("guidance-mode", key === "guidance");
       deviceSettingsModal.classList.toggle("other-mode", key === "other");
@@ -1292,8 +1293,8 @@
       document.querySelector("[data-designer-trigger-name]").textContent = preset.trigger;
       document.querySelector("[data-designer-simulator]").textContent = preset.simulator;
       document.querySelector("[data-designer-range]").textContent = preset.range;
-      document.querySelector("[data-designer-factor]").value = preset.factor;
       document.querySelector("[data-designer-category-simulator]").textContent = preset.categorySimulator;
+      syncDesignerInputsFromState();
     }
 
     function openDeviceModal() {
@@ -1327,12 +1328,22 @@
       button.addEventListener("click", () => {
         button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
         button.classList.add("active");
+        if (button.dataset.feedbackModality) {
+          updateDesignerParam("feedback.modality", button.dataset.feedbackModality);
+        }
       });
     });
 
     document.querySelectorAll(".designer-guidance-targets button").forEach((button) => {
       button.addEventListener("click", () => {
         button.classList.toggle("active");
+        defaultDeviceParameters.guidance.targets = selectedGuidanceTargets();
+      });
+    });
+
+    document.querySelectorAll("[data-designer-param]").forEach((input) => {
+      input.addEventListener("input", () => {
+        updateDesignerParam(input.dataset.designerParam, parseDesignerNumber(input.value));
       });
     });
 
@@ -1445,7 +1456,6 @@
     }
 
     document.querySelectorAll(".designer-drop-zone").forEach(bindDesignerDropZone);
-    setDesignerPreset("obstacle");
 
     function activeText(container) {
       const active = container.querySelector(".active");
@@ -1500,42 +1510,111 @@
       obstacle: {
         recognition_rate: 0.90,
         small_obstacle_rate: 0.40,
+        category_trigger_prob: 0.40,
         false_alarm_rate: 0.03,
         miss_rate: null,
+        action_duration: null,
+        preparation_duration: null,
         feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1 }
       },
       terrain: {
         recognition_rate: 0.75,
+        category_trigger_prob: 0.05,
         false_alarm_rate: 0.05,
         miss_rate: null,
+        action_duration: null,
+        preparation_duration: null,
         feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1 }
       },
       pedestrian: {
         recognition_rate: 0.85,
+        category_trigger_prob: null,
         false_alarm_rate: 0.04,
         miss_rate: null,
+        action_duration: null,
+        preparation_duration: null,
         feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1.15 }
       },
       vehicle: {
         recognition_rate: 0.88,
+        category_trigger_prob: null,
         false_alarm_rate: 0.03,
         miss_rate: null,
+        action_duration: null,
+        preparation_duration: null,
         feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1.2 }
       },
       guidance: {
         recognition_rate: 0.82,
+        category_trigger_prob: null,
         false_alarm_rate: 0.03,
         miss_rate: null,
+        action_duration: null,
+        preparation_duration: null,
         targets: ["curb", "wall", "railing", "tactile_guidance", "landmark"],
         feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 0.85 }
       },
       other: {
         recognition_rate: 0.72,
+        category_trigger_prob: null,
         false_alarm_rate: 0.05,
         miss_rate: null,
+        action_duration: null,
+        preparation_duration: null,
         feedback: { modality: "auditory", duration: 0.2, frequency: 1, competition: 1 }
       }
     };
+
+    let activeDesignerKey = "obstacle";
+
+    function nestedValue(object, path) {
+      return path.split(".").reduce((value, key) => value && value[key], object);
+    }
+
+    function setNestedValue(object, path, value) {
+      const keys = path.split(".");
+      const finalKey = keys.pop();
+      const target = keys.reduce((scope, key) => {
+        if (!scope[key]) scope[key] = {};
+        return scope[key];
+      }, object);
+      target[finalKey] = value;
+    }
+
+    function parseDesignerNumber(value) {
+      const trimmed = String(value ?? "").trim();
+      if (!trimmed) return null;
+      const parsed = Number(trimmed);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function syncDesignerInputsFromState() {
+      const params = defaultDeviceParameters[activeDesignerKey] || defaultDeviceParameters.obstacle;
+      document.querySelectorAll("[data-designer-param]").forEach((input) => {
+        const value = nestedValue(params, input.dataset.designerParam);
+        input.value = value === null || value === undefined ? "" : value;
+      });
+      const modality = params.feedback?.modality || "auditory";
+      document.querySelectorAll("[data-feedback-modality]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.feedbackModality === modality);
+      });
+      if (activeDesignerKey === "guidance") {
+        const targets = new Set(params.targets || []);
+        document.querySelectorAll("[data-guidance-target]").forEach((button) => {
+          button.classList.toggle("active", targets.has(button.dataset.guidanceTarget));
+        });
+      }
+    }
+
+    function updateDesignerParam(path, value) {
+      const params = defaultDeviceParameters[activeDesignerKey] || defaultDeviceParameters.obstacle;
+      setNestedValue(params, path, value);
+      if (path === "category_trigger_prob" && activeDesignerKey === "obstacle") {
+        params.small_obstacle_rate = value;
+      }
+    }
+
+    setDesignerPreset("obstacle");
 
     function collectDesignerRouteTemplate() {
       const slotMap = new Map();

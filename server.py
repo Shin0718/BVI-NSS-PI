@@ -49,39 +49,57 @@ DEFAULT_FUNCTION_PARAMS = {
     "obstacle": {
         "recognition_rate": 0.90,
         "small_obstacle_rate": 0.40,
+        "category_trigger_prob": 0.40,
         "false_alarm_rate": 0.03,
         "miss_rate": None,
+        "action_duration": None,
+        "preparation_duration": None,
         "feedback": {"modality": "auditory", "duration": 0.2, "frequency": 1.0, "competition": 1.0},
     },
     "terrain": {
         "recognition_rate": 0.75,
+        "category_trigger_prob": 0.05,
         "false_alarm_rate": 0.05,
         "miss_rate": None,
+        "action_duration": None,
+        "preparation_duration": None,
         "feedback": {"modality": "auditory", "duration": 0.2, "frequency": 1.0, "competition": 1.0},
     },
     "pedestrian": {
         "recognition_rate": 0.85,
+        "category_trigger_prob": None,
         "false_alarm_rate": 0.04,
         "miss_rate": None,
+        "action_duration": None,
+        "preparation_duration": None,
         "feedback": {"modality": "auditory", "duration": 0.2, "frequency": 1.0, "competition": 1.15},
     },
     "vehicle": {
         "recognition_rate": 0.88,
+        "category_trigger_prob": None,
         "false_alarm_rate": 0.03,
         "miss_rate": None,
+        "action_duration": None,
+        "preparation_duration": None,
         "feedback": {"modality": "auditory", "duration": 0.2, "frequency": 1.0, "competition": 1.2},
     },
     "guidance": {
         "recognition_rate": 0.82,
+        "category_trigger_prob": None,
         "false_alarm_rate": 0.03,
         "miss_rate": None,
+        "action_duration": None,
+        "preparation_duration": None,
         "targets": ["curb", "wall", "railing", "tactile_guidance", "landmark"],
         "feedback": {"modality": "auditory", "duration": 0.2, "frequency": 1.0, "competition": 0.85},
     },
     "other": {
         "recognition_rate": 0.72,
+        "category_trigger_prob": None,
         "false_alarm_rate": 0.05,
         "miss_rate": None,
+        "action_duration": None,
+        "preparation_duration": None,
         "feedback": {"modality": "auditory", "duration": 0.2, "frequency": 1.0, "competition": 1.0},
     },
 }
@@ -222,11 +240,23 @@ def _function_params(payload, function_key):
         defaults["small_obstacle_rate"] = _bounded_float(
             raw.get("small_obstacle_rate"), defaults["small_obstacle_rate"]
         )
+    if "category_trigger_prob" in defaults and raw.get("category_trigger_prob") is not None:
+        defaults["category_trigger_prob"] = _bounded_float(
+            raw.get("category_trigger_prob"), 0.0
+        )
     defaults["false_alarm_rate"] = _bounded_float(
         raw.get("false_alarm_rate"), defaults["false_alarm_rate"]
     )
     if raw.get("miss_rate") is not None:
         defaults["miss_rate"] = _bounded_float(raw.get("miss_rate"), 0.0)
+    if "action_duration" in defaults and raw.get("action_duration") is not None:
+        defaults["action_duration"] = _bounded_float(
+            raw.get("action_duration"), 0.0, low=0.0, high=30.0
+        )
+    if "preparation_duration" in defaults and raw.get("preparation_duration") is not None:
+        defaults["preparation_duration"] = _bounded_float(
+            raw.get("preparation_duration"), 0.0, low=0.0, high=30.0
+        )
     feedback = raw.get("feedback") or {}
     defaults["feedback"]["modality"] = str(
         feedback.get("modality", defaults["feedback"]["modality"])
@@ -490,6 +520,7 @@ def _designer_slot_summary(payload):
         "manual_weight": 0.0,
         "competition_sum": 0.0,
         "frequency_max": 0.0,
+        "false_alarm_sum": 0.0,
     }
     for slot in slots:
         scope = slot["scope"]
@@ -502,7 +533,13 @@ def _designer_slot_summary(payload):
             summary["function_scopes"].setdefault(function_key, set()).add(scope)
             params = _function_params(payload, function_key)
             feedback = params["feedback"]
-            weight = max(0.1, params["recognition_rate"]) * max(0.1, feedback["competition"])
+            active_duration = (params.get("action_duration") or 0.0) + (params.get("preparation_duration") or 0.0)
+            duration_factor = max(0.2, feedback["duration"]) + 0.15 * active_duration
+            weight = (
+                max(0.1, params["recognition_rate"])
+                * max(0.1, feedback["competition"])
+                * max(0.2, duration_factor)
+            )
             modality = feedback["modality"]
             if modality == "tactile":
                 summary["tactile_weight"] += weight
@@ -512,6 +549,7 @@ def _designer_slot_summary(payload):
                 summary["auditory_weight"] += weight
             summary["competition_sum"] += feedback["competition"]
             summary["frequency_max"] = max(summary["frequency_max"], feedback["frequency"])
+            summary["false_alarm_sum"] += params["false_alarm_rate"]
     return summary
 
 
@@ -522,7 +560,7 @@ def _scope_factor(scopes, scope):
 def _designer_recognition(payload, function_key, *, small=False):
     params = _function_params(payload, function_key)
     if small and function_key == "obstacle":
-        return params.get("small_obstacle_rate", params["recognition_rate"])
+        return params.get("category_trigger_prob") if params.get("category_trigger_prob") is not None else params.get("small_obstacle_rate", params["recognition_rate"])
     return params["recognition_rate"]
 
 
@@ -611,7 +649,11 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
     _set_override(overrides, "ACTR_MANUAL_SHARE", (summary["manual_weight"] + 0.20 + 0.25 * trust_gap) / total_channel)
     if summary["always_on"]:
         _set_override(overrides, "NAV_CYCLE_STEPS", max(2, int(5 - min(3, summary["frequency_max"]))))
-    _set_override(overrides, "ATTENTION_GATED_CENTRAL_DANGER_BOOST", 0.20 + 0.04 * min(3.0, summary["competition_sum"]))
+    _set_override(
+        overrides,
+        "ATTENTION_GATED_CENTRAL_DANGER_BOOST",
+        0.20 + 0.04 * min(3.0, summary["competition_sum"]) + 0.25 * min(1.0, summary["false_alarm_sum"]),
+    )
     _set_override(overrides, "DESIGNER_COMPILED_SLOTS", summary["slots"])
     _set_override(overrides, "DESIGNER_GUIDANCE_TARGETS", sorted(guidance_targets))
 
