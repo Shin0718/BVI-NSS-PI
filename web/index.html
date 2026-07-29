@@ -271,40 +271,6 @@
       border: 1px solid var(--line);
     }
 
-    .tabs {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      border-radius: 12px 12px 0 0;
-      overflow: hidden;
-      margin-bottom: 0;
-    }
-
-    .tab {
-      border: 0;
-      border-right: 1px solid var(--line);
-      background: #efefee;
-      min-height: 70px;
-      font-size: 17px;
-      font-weight: 850;
-      color: #282828;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-    }
-
-    .tab:last-child {
-      border-right: 0;
-    }
-
-    .tab.active {
-      background: #fff;
-      box-shadow: inset 0 -4px 0 var(--accent);
-    }
-
     .content-shell {
       background: var(--surface);
       border: 1px solid var(--line);
@@ -321,22 +287,6 @@
       display: block;
     }
 
-    .legacy-config {
-      display: none;
-    }
-
-    .panel-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 22px;
-    }
-
-    .capability-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 22px;
-    }
-
     .subhead {
       font-size: 20px;
       font-weight: 850;
@@ -346,106 +296,9 @@
       gap: 10px;
     }
 
-    .control-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      overflow: hidden;
-      border-radius: 12px;
-      box-shadow: var(--shadow-soft);
-    }
-
-    .control-table th {
-      background: var(--accent-2);
-      color: #303030;
-      text-align: left;
-      padding: 14px;
-      font-size: 13px;
-      font-weight: 850;
-    }
-
-    .control-table td {
-      background: #fff;
-      border-bottom: 1px solid #e6e6e4;
-      padding: 13px 14px;
-      vertical-align: middle;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .control-table tr:last-child td {
-      border-bottom: 0;
-    }
-
-    .switch {
-      position: relative;
-      width: 52px;
-      height: 28px;
-      display: inline-block;
-    }
-
-    .switch input {
-      display: none;
-    }
-
-    .slider-switch {
-      position: absolute;
-      cursor: pointer;
-      inset: 0;
-      background: #aaa;
-      border-radius: 999px;
-      transition: 0.18s;
-    }
-
-    .slider-switch::before {
-      content: "";
-      position: absolute;
-      width: 22px;
-      height: 22px;
-      left: 3px;
-      top: 3px;
-      border-radius: 50%;
-      background: #fff;
-      transition: 0.18s;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
-    }
-
-    .switch input:checked + .slider-switch {
-      background: #2f2f2f;
-    }
-
-    .switch input:checked + .slider-switch::before {
-      transform: translateX(24px);
-    }
-
-    .mini-select {
-      height: 34px;
-      font-size: 13px;
-      padding: 0 8px;
-    }
-
-    .range-line {
-      display: grid;
-      grid-template-columns: 150px 1fr 68px;
-      gap: 14px;
-      align-items: center;
-      min-height: 48px;
-      border-bottom: 1px solid #e1e1df;
-    }
-
-    .range-line:last-child {
-      border-bottom: 0;
-    }
-
     input[type="range"] {
       width: 100%;
       accent-color: var(--accent);
-    }
-
-    .range-value {
-      text-align: right;
-      font-weight: 850;
-      color: #333;
     }
 
     .metrics {
@@ -1090,10 +943,6 @@
         grid-template-columns: 1fr;
       }
 
-      .panel-grid {
-        grid-template-columns: 1fr;
-      }
-
       .designer-shell {
         grid-template-columns: 1fr;
       }
@@ -1276,165 +1125,6 @@
             </div>
           </section>
 
-          <section id="capability" class="tab-panel legacy-config">
-            <div class="capability-grid">
-              <div>
-                <h2 class="subhead">Reference Detection</h2>
-                <table class="control-table">
-                  <thead>
-                    <tr><th>Reference</th><th>Enabled</th><th>Reliability</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>Obstacle</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>High</option><option>Medium</option><option>Low</option></select></td></tr>
-                    <tr><td>Small ground obstacle</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
-                    <tr><td>Vehicle approach</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
-                    <tr><td>Crossing</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
-                    <tr><td>Landmark</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>High</option><option>Medium</option><option>Low</option></select></td></tr>
-                    <tr><td>Text or sign</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Medium</option><option>High</option><option>Low</option></select></td></tr>
-                    <tr><td>Building entrance</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Low</option><option>Medium</option><option>High</option></select></td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-
-          <section id="feedback" class="tab-panel legacy-config">
-            <div class="panel-grid">
-              <div class="card">
-                <h2 class="subhead">Feedback Modality</h2>
-                <table class="control-table">
-                  <thead><tr><th>Channel</th><th>Enabled</th><th>Intensity</th></tr></thead>
-                  <tbody>
-                    <tr><td>Vibration</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Normal</option><option>Subtle</option><option>Strong</option></select></td></tr>
-                    <tr><td>Beep</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Subtle</option><option>Normal</option><option>Strong</option></select></td></tr>
-                    <tr><td>Speech</td><td><label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Normal</option><option>Quiet</option><option>Prominent</option></select></td></tr>
-                    <tr><td>Spatial audio</td><td><label class="switch"><input type="checkbox"><span class="slider-switch"></span></label></td><td><select class="mini-select"><option>Normal</option><option>Quiet</option><option>Prominent</option></select></td></tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="card">
-                <h2 class="subhead">Warning Timing</h2>
-                <div class="field">
-                  <label>Activation Mode</label>
-                  <select>
-                    <option>Event-triggered</option>
-                    <option>Always on</option>
-                    <option>Manual request</option>
-                    <option>Periodic update</option>
-                  </select>
-                </div>
-                <div class="range-line">
-                  <label>Warning Frequency</label>
-                  <input type="range" min="1" max="3" value="2">
-                  <div class="range-value">Med.</div>
-                </div>
-                <div class="range-line">
-                  <label>Alert Interval</label>
-                  <input type="range" min="3" max="12" value="6">
-                  <div class="range-value">6s</div>
-                </div>
-                <div class="range-line">
-                  <label>Critical Override</label>
-                  <label class="switch"><input type="checkbox" checked><span class="slider-switch"></span></label>
-                  <div class="range-value">On</div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section id="response" class="tab-panel legacy-config">
-            <div class="panel-grid">
-              <div class="card">
-                <h2 class="subhead">Walking Response</h2>
-                <div class="field">
-                  <label>Default Obstacle Response</label>
-                  <select>
-                    <option>Stop and probe</option>
-                    <option>Slow down</option>
-                    <option>Detour</option>
-                    <option>Continue</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>High-risk Crossing Response</label>
-                  <select>
-                    <option>Wait</option>
-                    <option>Stop and probe</option>
-                    <option>Proceed carefully</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>Require Cane Confirmation</label>
-                  <div class="segmented two">
-                    <button class="active">Yes</button><button>No</button>
-                  </div>
-                </div>
-                <div class="field">
-                  <label>Recovery After Alert</label>
-                  <div class="segmented">
-                    <button>Fast</button><button class="active">Normal</button><button>Slow</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="card">
-                <h2 class="subhead">Reference Duration</h2>
-                <div class="field">
-                  <label>Alert Duration</label>
-                  <div class="segmented">
-                    <button>Short</button><button class="active">Medium</button><button>Long</button>
-                  </div>
-                </div>
-                <div class="field">
-                  <label>Landmark Persistence</label>
-                  <div class="segmented">
-                    <button>Weak</button><button class="active">Normal</button><button>Strong</button>
-                  </div>
-                </div>
-                <div class="field">
-                  <label>Vehicle Alert Persistence</label>
-                  <div class="segmented">
-                    <button>Short</button><button class="active">Medium</button><button>Long</button>
-                  </div>
-                </div>
-                <div class="field">
-                  <label>Repeated Alert Cooldown</label>
-                  <div class="segmented">
-                    <button>Short</button><button class="active">Medium</button><button>Long</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section id="cognitive" class="tab-panel legacy-config">
-            <div class="panel-grid">
-              <div class="card">
-                <h2 class="subhead">Cognitive Impact Controls</h2>
-                <div class="range-line">
-                  <label>Information Load</label>
-                  <input type="range" min="1" max="3" value="2">
-                  <div class="range-value">Med.</div>
-                </div>
-                <div class="range-line">
-                  <label>Auditory Interference</label>
-                  <input type="range" min="1" max="3" value="1">
-                  <div class="range-value">Low</div>
-                </div>
-                <div class="range-line">
-                  <label>False Alarm Impact</label>
-                  <input type="range" min="1" max="3" value="2">
-                  <div class="range-value">Med.</div>
-                </div>
-                <div class="range-line">
-                  <label>Missed Alert Risk</label>
-                  <input type="range" min="1" max="3" value="2">
-                  <div class="range-value">Med.</div>
-                </div>
-              </div>
-            </div>
-          </section>
         </div>
 
         <section class="card" style="margin: 16px 16px 16px;">
@@ -1518,15 +1208,6 @@
   </div>
 
   <script>
-    document.querySelectorAll(".tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach((item) => item.classList.remove("active"));
-        document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.remove("active"));
-        tab.classList.add("active");
-        document.getElementById(tab.dataset.tab).classList.add("active");
-      });
-    });
-
     document.querySelectorAll(".segmented button").forEach((button) => {
       button.addEventListener("click", () => {
         button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
@@ -1746,36 +1427,54 @@
       return active ? active.textContent.trim() : "";
     }
 
-    function collectTableRows(table) {
-      return Array.from(table.querySelectorAll("tbody tr")).map((row) => {
-        const cells = row.querySelectorAll("td");
-        return {
-          name: cells[0].textContent.trim(),
-          enabled: Boolean(row.querySelector("input[type='checkbox']")?.checked),
-          value: row.querySelector("select")?.value || null
-        };
-      });
-    }
-
-    function collectRangeRows(panel) {
-      return Array.from(panel.querySelectorAll(".range-line")).map((row) => {
-        return {
-          name: row.querySelector("label")?.textContent.trim() || "",
-          value: row.querySelector("input[type='range']")?.value || null,
-          enabled: row.querySelector("input[type='checkbox']")?.checked ?? null
-        };
-      });
-    }
+    const defaultDeviceConfig = {
+      references: [
+        { name: "Obstacle", enabled: true, value: "High" },
+        { name: "Small ground obstacle", enabled: true, value: "Medium" },
+        { name: "Vehicle approach", enabled: true, value: "Medium" },
+        { name: "Crossing", enabled: true, value: "Medium" },
+        { name: "Landmark", enabled: true, value: "High" },
+        { name: "Text or sign", enabled: false, value: "Medium" },
+        { name: "Building entrance", enabled: false, value: "Low" }
+      ],
+      feedback: {
+        modalities: [
+          { name: "Vibration", enabled: true, value: "Normal" },
+          { name: "Beep", enabled: false, value: "Subtle" },
+          { name: "Speech", enabled: true, value: "Normal" },
+          { name: "Spatial audio", enabled: false, value: "Normal" }
+        ],
+        activation_mode: "Event-triggered",
+        timing: [
+          { name: "Warning Frequency", value: "2", enabled: null },
+          { name: "Alert Interval", value: "6", enabled: null },
+          { name: "Critical Override", value: null, enabled: true }
+        ]
+      },
+      walking_response: {
+        default_obstacle_response: "Stop and probe",
+        high_risk_crossing_response: "Wait",
+        require_cane_confirmation: "Yes",
+        recovery_after_alert: "Normal"
+      },
+      reference_duration: {
+        alert_duration: "Medium",
+        landmark_persistence: "Normal",
+        vehicle_alert_persistence: "Medium",
+        repeated_alert_cooldown: "Medium"
+      },
+      cognitive_impact: [
+        { name: "Information Load", value: "2", enabled: null },
+        { name: "Auditory Interference", value: "1", enabled: null },
+        { name: "False Alarm Impact", value: "2", enabled: null },
+        { name: "Missed Alert Risk", value: "2", enabled: null }
+      ]
+    };
 
     function collectSimulationConfig() {
       const railCards = document.querySelectorAll(".rail .card");
       const scenarioCard = railCards[0];
       const profileCard = railCards[1];
-      const referenceTable = document.querySelector("#capability .control-table");
-      const feedbackTable = document.querySelector("#feedback .control-table");
-      const feedbackPanel = document.getElementById("feedback");
-      const responsePanel = document.getElementById("response");
-      const responseCards = responsePanel.querySelectorAll(".card");
 
       return {
         scenario: {
@@ -1795,26 +1494,16 @@
           goal_point: document.getElementById("goalPoint").value
         },
         device: {
-          references: collectTableRows(referenceTable)
+          references: defaultDeviceConfig.references
         },
         feedback: {
-          modalities: collectTableRows(feedbackTable),
-          activation_mode: feedbackPanel.querySelector("select")?.value || "Event-triggered",
-          timing: collectRangeRows(feedbackPanel)
+          modalities: defaultDeviceConfig.feedback.modalities,
+          activation_mode: defaultDeviceConfig.feedback.activation_mode,
+          timing: defaultDeviceConfig.feedback.timing
         },
-        walking_response: {
-          default_obstacle_response: responseCards[0].querySelectorAll("select")[0]?.value || "Stop and probe",
-          high_risk_crossing_response: responseCards[0].querySelectorAll("select")[1]?.value || "Wait",
-          require_cane_confirmation: activeText(responseCards[0].querySelectorAll(".segmented")[0]),
-          recovery_after_alert: activeText(responseCards[0].querySelectorAll(".segmented")[1])
-        },
-        reference_duration: {
-          alert_duration: activeText(responseCards[1].querySelectorAll(".segmented")[0]),
-          landmark_persistence: activeText(responseCards[1].querySelectorAll(".segmented")[1]),
-          vehicle_alert_persistence: activeText(responseCards[1].querySelectorAll(".segmented")[2]),
-          repeated_alert_cooldown: activeText(responseCards[1].querySelectorAll(".segmented")[3])
-        },
-        cognitive_impact: collectRangeRows(document.getElementById("cognitive"))
+        walking_response: defaultDeviceConfig.walking_response,
+        reference_duration: defaultDeviceConfig.reference_duration,
+        cognitive_impact: defaultDeviceConfig.cognitive_impact
       };
     }
 
