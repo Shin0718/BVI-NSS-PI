@@ -6,7 +6,6 @@ import contextlib
 import importlib.util
 import io
 import json
-import math
 import os
 import random
 import sys
@@ -471,32 +470,6 @@ def _parse_lat_lon(value):
         return None
 
 
-def _haversine_meters(point_a, point_b):
-    """Return approximate surface distance between two lat/lon points."""
-    lat1, lon1 = map(math.radians, point_a)
-    lat2, lon2 = map(math.radians, point_b)
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = (
-        math.sin(dlat / 2) ** 2
-        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
-    )
-    return 6371000 * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-
-def _route_download_area(start_lat_lon, goal_lat_lon, fallback_center, fallback_dist):
-    """Choose an OSM download area that covers the UI start and goal points."""
-    if start_lat_lon is not None and goal_lat_lon is not None:
-        center = (
-            (start_lat_lon[0] + goal_lat_lon[0]) / 2,
-            (start_lat_lon[1] + goal_lat_lon[1]) / 2,
-        )
-        point_distance = _haversine_meters(start_lat_lon, goal_lat_lon)
-        route_dist = max(500, int(point_distance / 2 + 350))
-        return center, min(route_dist, 2500)
-    return start_lat_lon or fallback_center or (-33.8688, 151.2093), fallback_dist
-
-
 def _build_environment_loader(start_point, goal_point):
     """Build a route loader that uses the UI start and goal coordinates."""
     cli = _engine_cli()
@@ -514,16 +487,8 @@ def _build_environment_loader(start_point, goal_point):
     def load_environment_from_ui(center_point=None, dist=500):
         import osmnx as ox
 
-        center, route_dist = _route_download_area(
-            start_lat_lon,
-            goal_lat_lon,
-            center_point,
-            dist,
-        )
-        graph, default_start, default_goal, _ = original_loader(
-            center_point=center,
-            dist=route_dist,
-        )
+        center = start_lat_lon or center_point or (-33.8688, 151.2093)
+        graph, default_start, default_goal, _ = original_loader(center_point=center, dist=dist)
 
         start_node = default_start
         goal_node = default_goal
