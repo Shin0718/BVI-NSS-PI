@@ -921,7 +921,7 @@ def _save_ui_run_config(report_path, payload, applied_parameters, result):
     with config_path.open("w", encoding="utf-8") as handle:
         json.dump(config, handle, ensure_ascii=False, indent=2)
     with io_report_path.open("w", encoding="utf-8") as handle:
-        handle.write(f"# BVI-SAS UI Input/Output Report\n\n")
+        handle.write(f"# BVI-NSS UI Input/Output Report\n\n")
         handle.write(f"- Summary report: `{report_path}`\n")
         handle.write(f"- UI config JSON: `{config_path}`\n\n")
         handle.write("## Output Preview\n\n")
@@ -1068,7 +1068,7 @@ def main():
     """Start the local product prototype server."""
     port = int(os.environ.get("BVI_SAS_PORT", "8765"))
     server = ThreadingHTTPServer(("127.0.0.1", port), BviSasRequestHandler)
-    print(f"BVI-SAS local site: http://127.0.0.1:{port}")
+    print(f"BVI-NSS local site: http://127.0.0.1:{port}")
     print("Press Ctrl+C to stop the server.")
     server.serve_forever()
 

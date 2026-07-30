@@ -999,7 +999,7 @@
   <main class="app">
     <header class="topbar">
       <div class="brand">
-        <img class="brand-mark" src="assets/bvi-logo.png" alt="BVI-SAS logo" />
+        <img class="brand-mark" src="assets/bvi-logo.png" alt="BVI-NSS logo" />
         <div>
           <div class="brand-title-row">
             <h1 class="brand-title">Blind &amp; Visually Impaired Navigation Simulation System (BVI-NSS)</h1>
@@ -1055,7 +1055,7 @@
         <section class="card">
           <h2 class="card-title">Simulation Control <span class="hint">?</span></h2>
           <div class="field">
-            <label>Monte Carlo Runs</label>
+            <label>Simulation Runs</label>
             <div class="number-row">
               <button data-step="-1" data-target="runs">−</button>
               <input id="runs" type="number" value="1" min="1" max="3" />
@@ -1830,7 +1830,7 @@
       const originalText = button.textContent;
       button.disabled = true;
       button.textContent = "Running...";
-      setRunStatus("Running the local BVI-SAS simulation. This may take a moment.");
+      setRunStatus("Running the local BVI-NSS simulation. This may take a moment.");
 
       try {
         const response = await fetch("/simulate", {
