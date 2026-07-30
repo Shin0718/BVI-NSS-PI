@@ -1079,7 +1079,7 @@
             <input id="goalPoint" type="text" value="-33.8722, 151.2131" />
           </div>
           <button id="startSimulation" class="primary-btn">Start Simulation</button>
-          <button class="secondary-btn">Reset Defaults</button>
+          <button id="resetDefaults" class="secondary-btn" type="button">Reset Defaults</button>
           <div id="runStatus" class="run-status" aria-live="polite"></div>
         </section>
       </aside>
@@ -1585,6 +1585,8 @@
       }
     };
 
+    const initialDeviceParameters = JSON.parse(JSON.stringify(defaultDeviceParameters));
+
     let activeDesignerKey = "obstacle";
 
     function nestedValue(object, path) {
@@ -1756,6 +1758,72 @@
         actrPreview.classList.remove("active");
       }
     }
+
+    function resetSegmentedGroup(group, label) {
+      group.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button.textContent.trim() === label);
+      });
+    }
+
+    function resetDesignerDropZones() {
+      document.querySelectorAll(".designer-drop-zone[data-extra='true']").forEach((zone) => zone.remove());
+      document.querySelectorAll(".designer-drop-zone").forEach((zone) => {
+        delete zone.dataset.value;
+        delete zone.dataset.label;
+        zone.classList.remove("filled", "is-over");
+        const label = zone.dataset.kind === "function" ? "Function" : "Trigger";
+        zone.querySelector("span").textContent = label;
+      });
+    }
+
+    function resetDeviceParameters() {
+      Object.keys(defaultDeviceParameters).forEach((key) => {
+        delete defaultDeviceParameters[key];
+      });
+      Object.assign(defaultDeviceParameters, JSON.parse(JSON.stringify(initialDeviceParameters)));
+      activeDesignerKey = "obstacle";
+      document.querySelectorAll(".designer-function").forEach((button) => {
+        button.classList.toggle("active", button.dataset.key === "obstacle");
+      });
+      setDesignerPreset("obstacle");
+      closeDeviceModal();
+    }
+
+    function clearSimulationOutput() {
+      document.getElementById("metricLoad").textContent = "--";
+      document.getElementById("metricHighLoad").textContent = "--";
+      document.getElementById("metricRisk").textContent = "--";
+      document.getElementById("metricProbe").textContent = "--";
+      document.getElementById("metricReportPath").textContent = "";
+      document.getElementById("routeMapImage").removeAttribute("src");
+      document.getElementById("actrChartImage").removeAttribute("src");
+      document.getElementById("routePreview").classList.remove("active");
+      document.getElementById("actrPreview").classList.remove("active");
+    }
+
+    function resetSimulationDefaults() {
+      const railCards = document.querySelectorAll(".rail .card");
+      const scenarioGroups = railCards[0].querySelectorAll(".segmented");
+      resetSegmentedGroup(scenarioGroups[0], "Medium");
+      resetSegmentedGroup(scenarioGroups[1], "Medium");
+      resetSegmentedGroup(scenarioGroups[2], "Partial");
+
+      const profileGroups = railCards[1].querySelectorAll(".segmented");
+      resetSegmentedGroup(profileGroups[0], "Familiar");
+      resetSegmentedGroup(profileGroups[1], "Medium");
+
+      document.getElementById("runs").value = "1";
+      document.getElementById("seed").value = "42";
+      document.getElementById("startPoint").value = "-33.8688, 151.2093";
+      document.getElementById("goalPoint").value = "-33.8722, 151.2131";
+
+      resetDesignerDropZones();
+      resetDeviceParameters();
+      clearSimulationOutput();
+      setRunStatus("", false);
+    }
+
+    document.getElementById("resetDefaults").addEventListener("click", resetSimulationDefaults);
 
     document.getElementById("startSimulation").addEventListener("click", async () => {
       const button = document.getElementById("startSimulation");
