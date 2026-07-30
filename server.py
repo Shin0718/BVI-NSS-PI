@@ -498,6 +498,26 @@ def _build_environment_loader(start_point, goal_point):
             goal_node = ox.nearest_nodes(graph, X=goal_lat_lon[1], Y=goal_lat_lon[0])
 
         route_phases = environment_module.build_route_phases(graph, start_node, goal_node)
+        has_route_edges = any(
+            phase.get("edges")
+            for phase in route_phases
+            if phase.get("type") == "path"
+        )
+        if not has_route_edges and start_node != goal_node:
+            fallback_phases = environment_module.build_route_phases(
+                graph, default_start, default_goal
+            )
+            fallback_has_edges = any(
+                phase.get("edges")
+                for phase in fallback_phases
+                if phase.get("type") == "path"
+            )
+            if fallback_has_edges:
+                print(
+                    "[BVI-NSS] UI start/goal route was empty; "
+                    "falling back to the default valid route."
+                )
+                return graph, default_start, default_goal, fallback_phases
         return graph, start_node, goal_node, route_phases
 
     return load_environment_from_ui
