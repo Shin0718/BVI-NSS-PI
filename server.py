@@ -911,7 +911,7 @@ def run_simulation_from_payload(payload):
 def run_legacy_simulation_from_payload(payload):
     """Run the existing simulation engine from a web request payload."""
     simulation = payload.get("simulation", {})
-    runs = _bounded_int(simulation.get("runs"), default=1, low=1, high=3)
+    runs = _bounded_int(simulation.get("runs"), default=1, low=1, high=999)
     seed = _bounded_int(simulation.get("seed"), default=42, low=1, high=999999)
     familiarity = _extract_familiarity(payload)
 
