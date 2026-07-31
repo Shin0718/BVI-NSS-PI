@@ -20,7 +20,7 @@ Create a Python environment and install dependencies:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 Start the local web interface:
@@ -36,6 +36,36 @@ http://127.0.0.1:8766
 ```
 
 The site runs on the user's own machine. No hosted server, account system, or cloud deployment is required.
+
+## Dependency and Port Checks
+
+Use `python -m pip` instead of plain `pip` so dependencies are installed into the same Python environment used to start the server.
+
+Check that the required route-search dependency is available:
+
+```bash
+python -c "import sys, sklearn; print(sys.executable); print(sklearn.__version__)"
+```
+
+If the web page reports a `scikit-learn` or route-search error after installing dependencies, stop the old server process and restart `server.py`. Refreshing the browser is not enough if an old process is still bound to port `8766`.
+
+On macOS/Linux:
+
+```bash
+lsof -ti tcp:8766
+kill <PID>
+python server.py
+```
+
+On Windows:
+
+```bat
+netstat -ano | findstr :8766
+taskkill /PID <PID> /F
+python server.py
+```
+
+If `python -c "import sys, sklearn; ..."` works but the browser still reports the dependency error, the browser is almost certainly connected to an older server process or to a different Python environment.
 
 ## Repository Structure
 
@@ -65,6 +95,8 @@ The code was developed for Python 3.12 or later. The required Python packages ar
 - `numpy`
 - `osmnx`
 - `pyactr`
+- `scikit-learn`
+- `scipy`
 
 ## Local Web Interface
 
