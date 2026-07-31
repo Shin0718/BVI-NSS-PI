@@ -4,3 +4,4 @@ numpy
 osmnx
 pyactr
 scipy
+scikit-learn
