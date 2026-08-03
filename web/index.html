@@ -1221,12 +1221,12 @@
       </div><span></span></div>
       <div class="designer-setting-row wide designer-generic-only"><span class="designer-bullet"></span><div data-designer-simulator>Obstacle recognition range simulator</div></div>
       <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>Recognition Range</label><div class="designer-static-value" data-designer-range>Default</div><span></span></div>
-      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>Range Impact Factor</label><input class="designer-input" data-designer-param="recognition_rate" data-designer-factor /><span></span></div>
+      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>Cane Range Multiplier</label><input class="designer-input" data-designer-param="recognition_rate" data-designer-factor /><span class="designer-hint-text">0~10</span></div>
       <div class="designer-setting-row designer-other-only"><span></span><label>Simulation Probability</label><input class="designer-input" data-designer-param="recognition_rate" /><span></span></div>
       <div class="designer-setting-row"><span></span><label>Active Duration</label><input class="designer-input" data-designer-param="action_duration" /><span></span></div>
       <div class="designer-setting-row"><span></span><label>Preparation Duration</label><input class="designer-input" data-designer-param="preparation_duration" /><span></span></div>
-      <div class="designer-setting-row wide designer-generic-only designer-category-only"><span class="designer-bullet"></span><div data-designer-category-simulator>Obstacle category trigger simulator, excluding cane detection</div></div>
-      <div class="designer-setting-row designer-generic-only designer-category-only"><span></span><label>Simulation Probability</label><input class="designer-input" data-designer-param="category_trigger_prob" /><span class="designer-hint-text">0~1</span></div>
+      <div class="designer-setting-row wide designer-generic-only designer-category-only"><span class="designer-bullet"></span><div data-designer-category-simulator>Additional obstacle simulator, excluding cane detection</div></div>
+      <div class="designer-setting-row designer-generic-only designer-category-only"><span></span><label>Additional Obstacle Probability</label><input class="designer-input" data-designer-param="category_trigger_prob" /><span class="designer-hint-text">0~1</span></div>
       <div class="designer-setting-row"><span class="designer-bullet"></span><label>False/Missed Alert Probability</label><input class="designer-input" data-designer-param="false_alarm_rate" /><span class="designer-hint-text">0~1</span></div>
 
       <div class="designer-settings-section">
@@ -1265,9 +1265,9 @@
 
     const designerPresets = {
       obstacle: {
-        cn: "Obstacle Detection", en: "Device Parameters", subtitle: "Range, category, probability, active time, and feedback parameters",
+        cn: "Obstacle Detection", en: "Device Parameters", subtitle: "Cane range multiplier, additional obstacles, active time, and feedback parameters",
         trigger: "Obstacle", simulator: "Obstacle recognition range simulator", range: "Default", factor: "",
-        categorySimulator: "Obstacle category trigger simulator, excluding cane detection"
+        categorySimulator: "Additional obstacle simulator, excluding cane detection"
       },
       terrain: {
         cn: "Terrain Detection", en: "Device Parameters", subtitle: "Surface type, probability, active time, and feedback parameters",
@@ -1528,9 +1528,9 @@
 
     const defaultDeviceParameters = {
       obstacle: {
-        recognition_rate: 0.90,
+        recognition_rate: 1.00,
         small_obstacle_rate: 0.40,
-        category_trigger_prob: 0.40,
+        category_trigger_prob: 0.001,
         false_alarm_rate: 0.03,
         miss_rate: null,
         action_duration: null,

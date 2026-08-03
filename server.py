@@ -51,9 +51,9 @@ SIMULATION_LOCK = threading.Lock()
 
 DEFAULT_FUNCTION_PARAMS = {
     "obstacle": {
-        "recognition_rate": 0.90,
+        "recognition_rate": 1.00,
         "small_obstacle_rate": 0.40,
-        "category_trigger_prob": 0.40,
+        "category_trigger_prob": 0.001,
         "false_alarm_rate": 0.03,
         "miss_rate": None,
         "action_duration": None,
@@ -237,8 +237,9 @@ def _function_params(payload, function_key):
     parameters = payload.get("device_parameters") or {}
     raw = parameters.get(function_key) or parameters.get(f"{function_key}_detection") or {}
     defaults = json.loads(json.dumps(DEFAULT_FUNCTION_PARAMS[function_key]))
+    recognition_high = 10.0 if function_key == "obstacle" else 1.0
     defaults["recognition_rate"] = _bounded_float(
-        raw.get("recognition_rate"), defaults["recognition_rate"]
+        raw.get("recognition_rate"), defaults["recognition_rate"], low=0.0, high=recognition_high
     )
     if "small_obstacle_rate" in defaults:
         defaults["small_obstacle_rate"] = _bounded_float(
@@ -561,8 +562,11 @@ def _designer_slot_summary(payload):
             feedback = params["feedback"]
             active_duration = (params.get("action_duration") or 0.0) + (params.get("preparation_duration") or 0.0)
             duration_factor = max(0.2, feedback["duration"]) + 0.15 * active_duration
+            recognition_weight = params["recognition_rate"]
+            if function_key == "obstacle":
+                recognition_weight = min(1.0, recognition_weight)
             weight = (
-                max(0.1, params["recognition_rate"])
+                max(0.1, recognition_weight)
                 * max(0.1, feedback["competition"])
                 * max(0.2, duration_factor)
             )
@@ -594,6 +598,24 @@ def _designer_recognition(payload, function_key, *, small=False):
     return params["recognition_rate"]
 
 
+def _designer_obstacle_probability_parts(payload, obstacle_enabled):
+    params = _function_params(payload, "obstacle")
+    cane_range_multiplier = params.get("recognition_rate")
+    if cane_range_multiplier is None:
+        cane_range_multiplier = 1.0
+    cane_range_multiplier = _bounded_float(cane_range_multiplier, default=1.0, low=0.0, high=10.0)
+    other_obstacle_prob = params.get("category_trigger_prob")
+    if other_obstacle_prob is None:
+        other_obstacle_prob = params.get("small_obstacle_rate", 0.0)
+    other_obstacle_prob = _bounded_float(other_obstacle_prob, default=0.0, low=0.0, high=1.0)
+    if not obstacle_enabled:
+        cane_range_multiplier = 1.0
+        other_obstacle_prob = 0.0
+    effective_cane_prob = BASE_CANE_OBSTACLE_PROB * cane_range_multiplier
+    total_obstacle_prob = min(1.0, effective_cane_prob + other_obstacle_prob)
+    return cane_range_multiplier, other_obstacle_prob, total_obstacle_prob
+
+
 def _designer_obstacle_scopes(payload):
     if not _has_designer_slots(payload):
         return set()
@@ -618,9 +640,7 @@ def _annotate_device_obstacle_rows(rows, fieldnames, payload):
 
     scopes = _designer_obstacle_scopes(payload)
     params = _function_params(payload, "obstacle")
-    detection_prob = params.get("category_trigger_prob")
-    if detection_prob is None:
-        detection_prob = params.get("small_obstacle_rate", params.get("recognition_rate", 0.0))
+    detection_prob = params.get("recognition_rate", 0.0)
     detection_prob = _bounded_float(detection_prob, default=0.0, low=0.0, high=1.0)
     miss_prob = params.get("miss_rate")
     if miss_prob is None:
@@ -680,6 +700,10 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
         trigger_scopes.get("landmark", set()) | trigger_scopes.get("always_on", set())
     )
 
+    obstacle_enabled = bool(obstacle_scopes)
+    cane_range_multiplier, other_obstacle_prob, total_obstacle_prob = _designer_obstacle_probability_parts(
+        payload, obstacle_enabled
+    )
     terrain_enabled = 1.0 if terrain_scopes else 0.0
     vehicle_segment = _scope_factor(vehicle_scopes, "segment")
     vehicle_intersection = _scope_factor(vehicle_scopes, "intersection")
@@ -695,9 +719,9 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
     tactile_guidance = guidance_strength if "tactile_guidance" in guidance_targets else 0.0
     landmark_guidance = guidance_strength if "landmark" in guidance_targets else 0.0
 
-    # Obstacle device slots are recognition/alert interventions; they do not create
-    # or suppress baseline cane/environment obstacle events.
-    _set_override(overrides, "CANE_OBSTACLE_PROB", BASE_CANE_OBSTACLE_PROB)
+    _set_override(overrides, "CANE_RANGE_MULTIPLIER", cane_range_multiplier)
+    _set_override(overrides, "OTHER_OBSTACLE_PROB", other_obstacle_prob)
+    _set_override(overrides, "CANE_OBSTACLE_PROB", total_obstacle_prob)
     _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(terrain_enabled * tactile_factor * 0.35, curb_guidance))
     _set_override(overrides, "CANE_WALL_PROB", 0.00507 * wall_guidance)
     _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * railing_guidance)
