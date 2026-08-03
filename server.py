@@ -731,9 +731,10 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
     _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", 0.000251 * max(vehicle_segment, vehicle_intersection) * traffic_factor)
     _set_override(overrides, "HUMAN_ACTIVITY_PROB", 0.01036 * pedestrian_segment * _designer_recognition(payload, "pedestrian") * crowd_factor)
     _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", 0.02402 * pedestrian_intersection * _designer_recognition(payload, "pedestrian") * crowd_factor)
-    landmark_strength = max(landmark_guidance, other_strength)
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006 * landmark_strength)
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030 * landmark_strength)
+    if landmark_guidance > 0.0 or other_strength > 0.0:
+        landmark_strength = max(landmark_guidance, other_strength)
+        _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006 * landmark_strength)
+        _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030 * landmark_strength)
 
     if terrain_enabled or tactile_guidance:
         surface_distribution = {
