@@ -27,6 +27,9 @@ MPL_CACHE_DIR = BASE_DIR / ".matplotlib"
 os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR))
 MPL_CACHE_DIR.mkdir(exist_ok=True)
 
+BASE_CANE_OBSTACLE_PROB = 0.00179
+DEVICE_OBSTACLE_FIELDS = ("device_obstacle_detected", "device_obstacle_alert")
+
 
 def _load_engine_cli():
     """Load the BVI-SAS command-line module from the hyphenated source folder."""
@@ -335,6 +338,8 @@ def _summarize_single_run(summary):
         "stop_probe_count": int(result.get("stop_probe_count", 0)),
         "total_steps": int(result.get("total_steps", 0)),
         "gate_passed_count": int(result.get("gate_passed_count", 0)),
+        "device_obstacle_detected_step_count": int(result.get("device_obstacle_detected_step_count", 0)),
+        "device_obstacle_alert_step_count": int(result.get("device_obstacle_alert_step_count", 0)),
         "map_image_url": _report_url(summary.get("map_image")),
         "actr_chart_url": _report_url(summary.get("actr_overview_chart_image")),
     }
@@ -578,11 +583,72 @@ def _scope_factor(scopes, scope):
     return 1.0 if scope in scopes else 0.0
 
 
+def _csv_truthy(value):
+    return str(value).strip().lower() in {"1", "true", "yes", "y"}
+
+
 def _designer_recognition(payload, function_key, *, small=False):
     params = _function_params(payload, function_key)
     if small and function_key == "obstacle":
         return params.get("category_trigger_prob") if params.get("category_trigger_prob") is not None else params.get("small_obstacle_rate", params["recognition_rate"])
     return params["recognition_rate"]
+
+
+def _designer_obstacle_scopes(payload):
+    if not _has_designer_slots(payload):
+        return set()
+    scopes = set()
+    for slot in _compile_route_template(payload):
+        triggers = set(slot["triggers"])
+        if "obstacle" in slot["functions"] and ({"obstacle", "always_on"} & triggers):
+            scopes.add(slot["scope"])
+    return scopes
+
+
+def _csv_route_scope(row):
+    state = str(row.get("intersection_state", "")).strip().lower()
+    return "intersection" if state in {"intersection", "crossing"} else "segment"
+
+
+def _annotate_device_obstacle_rows(rows, fieldnames, payload):
+    """Record device obstacle recognition without changing baseline obstacle events."""
+    for field in DEVICE_OBSTACLE_FIELDS:
+        if field not in fieldnames:
+            fieldnames.append(field)
+
+    scopes = _designer_obstacle_scopes(payload)
+    params = _function_params(payload, "obstacle")
+    detection_prob = params.get("category_trigger_prob")
+    if detection_prob is None:
+        detection_prob = params.get("small_obstacle_rate", params.get("recognition_rate", 0.0))
+    detection_prob = _bounded_float(detection_prob, default=0.0, low=0.0, high=1.0)
+    miss_prob = params.get("miss_rate")
+    if miss_prob is None:
+        miss_prob = params.get("false_alarm_rate", 0.0)
+    miss_prob = _bounded_float(miss_prob, default=0.0, low=0.0, high=1.0)
+    seed = _bounded_int((payload.get("simulation") or {}).get("seed"), default=42, low=1, high=999999)
+
+    detected_count = 0
+    alert_count = 0
+    for row in rows:
+        active_scope = _csv_route_scope(row) in scopes
+        has_obstacle_event = _csv_truthy(row.get("obstacle", "0"))
+        detected = 0
+        alerted = 0
+        if active_scope and has_obstacle_event:
+            step = row.get("step", "")
+            rng = random.Random(f"{seed}:{step}:device_obstacle")
+            detected = int(rng.random() < detection_prob)
+            alerted = int(detected and rng.random() >= miss_prob)
+        row["device_obstacle_detected"] = detected
+        row["device_obstacle_alert"] = alerted
+        detected_count += detected
+        alert_count += alerted
+
+    return {
+        "device_obstacle_detected_step_count": detected_count,
+        "device_obstacle_alert_step_count": alert_count,
+    }
 
 
 def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_factor, tactile_factor, trust_gap):
@@ -614,9 +680,6 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
         trigger_scopes.get("landmark", set()) | trigger_scopes.get("always_on", set())
     )
 
-    obstacle_rate = _designer_recognition(payload, "obstacle")
-    small_obstacle_rate = _designer_recognition(payload, "obstacle", small=True)
-    obstacle_enabled = 1.0 if obstacle_scopes else 0.0
     terrain_enabled = 1.0 if terrain_scopes else 0.0
     vehicle_segment = _scope_factor(vehicle_scopes, "segment")
     vehicle_intersection = _scope_factor(vehicle_scopes, "intersection")
@@ -632,8 +695,10 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
     tactile_guidance = guidance_strength if "tactile_guidance" in guidance_targets else 0.0
     landmark_guidance = guidance_strength if "landmark" in guidance_targets else 0.0
 
-    _set_override(overrides, "CANE_OBSTACLE_PROB", 0.00179 * obstacle_rate * obstacle_enabled)
-    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(small_obstacle_rate * obstacle_enabled, terrain_enabled * tactile_factor * 0.35, curb_guidance))
+    # Obstacle device slots are recognition/alert interventions; they do not create
+    # or suppress baseline cane/environment obstacle events.
+    _set_override(overrides, "CANE_OBSTACLE_PROB", BASE_CANE_OBSTACLE_PROB)
+    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(terrain_enabled * tactile_factor * 0.35, curb_guidance))
     _set_override(overrides, "CANE_WALL_PROB", 0.00507 * wall_guidance)
     _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * railing_guidance)
     _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", 0.00142 * vehicle_segment * _designer_recognition(payload, "vehicle") * traffic_factor)
@@ -924,10 +989,13 @@ def _annotate_report_with_ui_context(report_path, payload, summary):
                 reader = csv.DictReader(handle)
                 rows = list(reader)
                 fieldnames = reader.fieldnames or []
+            device_obstacle_counts = _annotate_device_obstacle_rows(rows, fieldnames, payload)
+            summary.setdefault("result", {}).update(device_obstacle_counts)
             if rows and {"traffic_density", "crowd_density"}.issubset(fieldnames):
                 for row in rows:
                     row["traffic_density"] = scenario_context["traffic_density"]
                     row["crowd_density"] = scenario_context["crowd_density"]
+            if rows:
                 with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
                     writer = csv.DictWriter(handle, fieldnames=fieldnames)
                     writer.writeheader()
