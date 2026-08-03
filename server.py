@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import csv
 import importlib.util
 import io
 import json
@@ -903,6 +904,39 @@ def _save_ui_run_config(report_path, payload, applied_parameters, result):
     return config_path, io_report_path
 
 
+def _annotate_report_with_ui_context(report_path, payload, summary):
+    """Record UI scenario context in summary JSON and per-step CSV output."""
+    report_path = Path(report_path)
+    scenario = payload.get("scenario") or {}
+    scenario_context = {
+        "traffic_density": scenario.get("traffic_density", ""),
+        "crowd_density": scenario.get("crowd_density", ""),
+        "tactile_paving": scenario.get("tactile_paving", ""),
+    }
+
+    summary["ui_scenario"] = scenario_context
+
+    single_csv = summary.get("single_simulation_data_csv")
+    if single_csv:
+        csv_path = Path(single_csv)
+        if csv_path.exists():
+            with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
+                reader = csv.DictReader(handle)
+                rows = list(reader)
+                fieldnames = reader.fieldnames or []
+            if rows and {"traffic_density", "crowd_density"}.issubset(fieldnames):
+                for row in rows:
+                    row["traffic_density"] = scenario_context["traffic_density"]
+                    row["crowd_density"] = scenario_context["crowd_density"]
+                with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(rows)
+
+    with report_path.open("w", encoding="utf-8") as handle:
+        json.dump(summary, handle, ensure_ascii=False, indent=2)
+
+
 def run_simulation_from_payload(payload):
     """Run the existing BVI-SAS engine with the new designer parameter mapping."""
     return run_legacy_simulation_from_payload(payload)
@@ -928,6 +962,7 @@ def run_legacy_simulation_from_payload(payload):
                     )
                     with open(summary_path, "r", encoding="utf-8") as handle:
                         summary = json.load(handle)
+                    _annotate_report_with_ui_context(summary_path, payload, summary)
                     result = _summarize_monte_carlo(summary)
                     report_path = summary_path
                 else:
@@ -937,6 +972,7 @@ def run_legacy_simulation_from_payload(payload):
                     _, _, summary_path = cli.run(familiarity=familiarity)
                     with open(summary_path, "r", encoding="utf-8") as handle:
                         summary = json.load(handle)
+                    _annotate_report_with_ui_context(summary_path, payload, summary)
                     result = _summarize_single_run(summary)
                     report_path = summary_path
             config_path, io_report_path = _save_ui_run_config(

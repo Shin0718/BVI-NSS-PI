@@ -319,6 +319,186 @@ def _as_int(row, *keys, default=0):
     return int(default)
 
 
+def _row_guidance_flags(row):
+    """Return route-reference flags from tactile/cane/landmark state."""
+    guidance_text = " ".join(
+        str(row.get(key, ""))
+        for key in (
+            "cane_guidance_type",
+            "dominant_cane_type",
+            "matched_landmark",
+            "surface_type",
+        )
+    ).lower()
+    matched_landmark = str(row.get("matched_landmark", "none")).strip().lower()
+    surface_type = str(row.get("surface_type", "")).strip().lower()
+
+    tactile = (
+        "tactile" in guidance_text
+        or surface_type == "tactile_guidance"
+        or row.get("surface_cn") == "盲道"
+    )
+    wall = "wall" in guidance_text or "墙" in guidance_text
+    railing = "railing" in guidance_text or "栏杆" in guidance_text
+    landmark = (
+        matched_landmark not in {"", "none", "nan"}
+        or _is_truthy(row.get("landmark_triggered", False))
+        or _is_truthy(row.get("landmark_episode_active", False))
+    )
+    route = (
+        tactile
+        or wall
+        or railing
+        or landmark
+        or _is_truthy(row.get("cane_guidance_present", False))
+        or _is_truthy(row.get("spatial_anchored", False))
+    )
+    return {
+        "tactile_paving": tactile,
+        "wall": wall,
+        "railing": railing,
+        "route": route,
+        "landmark": landmark,
+        "none": not route and not landmark,
+    }
+
+
+def _row_reference_present(row):
+    """Return whether any navigation reference is available on this step."""
+    flags = _row_guidance_flags(row)
+    return any(
+        flags[key] for key in ("tactile_paving", "wall", "railing", "route", "landmark")
+    )
+
+
+def _write_single_simulation_data_csv(sim_log, report_dir, ts, run_id=1, seed=""):
+    """Write the compact per-step CSV requested for single-run analysis."""
+    csv_path = os.path.join(report_dir, f"single_simulation_data_{ts}.csv")
+    fieldnames = [
+        "run",
+        "seed",
+        "step",
+        "simulation_time",
+        "segment_id",
+        "intersection_state",
+        "surface_type",
+        "crowd_density",
+        "traffic_density",
+        "reference_tactile_paving",
+        "reference_wall",
+        "reference_railing",
+        "reference_route",
+        "reference_landmark",
+        "reference_none",
+        "vehicle_approach",
+        "horn",
+        "pedestrian",
+        "obstacle",
+        "obstacle_type",
+        "risk",
+        "net_priority",
+        "gate_passed",
+        "IW",
+        "W_ave",
+        "move_direct",
+        "stop_and_probe",
+        "wait",
+        "walking_speed",
+        "position_change",
+        "reference_anchored",
+        "guidance_absent_steps",
+        "memory_retrieval",
+        "load_auditory",
+        "load_tactile",
+        "load_manual",
+        "load_central",
+        "load_memory",
+    ]
+
+    with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in sim_log:
+            flags = _row_guidance_flags(row)
+            action = str(row.get("next_action", ""))
+            edge_from = row.get("edge_from", "")
+            edge_to = row.get("edge_to", "")
+            segment_id = (
+                f"{edge_from}->{edge_to}"
+                if edge_from not in (None, "") and edge_to not in (None, "")
+                else str(row.get("position", ""))
+            )
+            if _is_truthy(row.get("crossing_active", False)):
+                intersection_state = "crossing"
+            elif _is_truthy(row.get("at_intersection", False)):
+                intersection_state = "intersection"
+            else:
+                intersection_state = "segment"
+
+            step_dt = _as_float(row, "actr_step_dt", default=0.0)
+            position_change = _as_float(row, "step_travel_m", "step_len_m", default=0.0)
+            walking_speed = position_change / step_dt if step_dt > 0 else 0.0
+            dominant_cane = str(row.get("dominant_cane_type", "none")).strip().lower()
+            obstacle = _is_truthy(row.get("cane_obstacle", False)) or dominant_cane == "obstacle"
+            obstacle_type = dominant_cane if obstacle and dominant_cane else "none"
+
+            writer.writerow(
+                {
+                    "run": row.get("run", run_id),
+                    "seed": row.get("seed", seed),
+                    "step": row.get("step", ""),
+                    "simulation_time": row.get("sim_time", ""),
+                    "segment_id": segment_id,
+                    "intersection_state": intersection_state,
+                    "surface_type": row.get("surface_type", ""),
+                    "crowd_density": row.get("crowd_density", ""),
+                    "traffic_density": row.get("traffic_density", ""),
+                    "reference_tactile_paving": int(flags["tactile_paving"]),
+                    "reference_wall": int(flags["wall"]),
+                    "reference_railing": int(flags["railing"]),
+                    "reference_route": int(flags["route"]),
+                    "reference_landmark": int(flags["landmark"]),
+                    "reference_none": int(flags["none"]),
+                    "vehicle_approach": int(
+                        _is_truthy(row.get("vehicle_approach", False))
+                        or str(row.get("dominant_sound_type", "")) == "vehicle_approach"
+                    ),
+                    "horn": int(
+                        _is_truthy(row.get("snd_horn", False))
+                        or str(row.get("dominant_sound_type", "")) == "horn"
+                    ),
+                    "pedestrian": int(
+                        _is_truthy(row.get("human_activity_triggered", False))
+                        or _is_truthy(row.get("human_activity", False))
+                    ),
+                    "obstacle": int(obstacle),
+                    "obstacle_type": obstacle_type,
+                    "risk": row.get("actr_risk_signal", row.get("risk_prob", "")),
+                    "net_priority": row.get("net_priority", ""),
+                    "gate_passed": int(_is_truthy(row.get("gate_passed", False))),
+                    "IW": row.get("actr_iw_total", ""),
+                    "W_ave": row.get("actr_wave", ""),
+                    "move_direct": int(action == "move_direct"),
+                    "stop_and_probe": int(action == "stop_and_probe"),
+                    "wait": int(action.startswith("wait")),
+                    "walking_speed": round(walking_speed, 6),
+                    "position_change": round(position_change, 6),
+                    "reference_anchored": int(
+                        _is_truthy(row.get("spatial_anchored", False))
+                        or _row_reference_present(row)
+                    ),
+                    "guidance_absent_steps": row.get("guidance_absent_steps", ""),
+                    "memory_retrieval": int(_is_truthy(row.get("actr_memory_active", False))),
+                    "load_auditory": row.get("actr_iw_auditory", ""),
+                    "load_tactile": row.get("actr_iw_tactile", ""),
+                    "load_manual": row.get("actr_iw_manual", ""),
+                    "load_central": row.get("actr_iw_central", ""),
+                    "load_memory": row.get("actr_iw_memory", ""),
+                }
+            )
+    return csv_path
+
+
 def _count_true(rows, *keys):
     """Handle count true behavior."""
     return sum(
@@ -1073,6 +1253,10 @@ def generate_report(
         1 for r in sim_log if r["matched_landmark"] != "none"
     )
     landmark_match_count = landmark_active_step_count
+    guidance_reference_step_count = sum(
+        1 for r in sim_log if _row_guidance_flags(r)["route"]
+    )
+    reference_active_step_count = sum(1 for r in sim_log if _row_reference_present(r))
     spatial_anchored_count = sum(1 for r in sim_log if r.get("spatial_anchored", False))
     stop_probe_count = sum(1 for r in sim_log if r["next_action"] == "stop_and_probe")
     actr_iw_high_count = sum(
@@ -1297,6 +1481,10 @@ def generate_report(
         for row in sim_log:
             writer.writerow({field: row.get(field, 0.0) for field in module_fields})
 
+    single_simulation_csv_path = _write_single_simulation_data_csv(
+        sim_log, report_dir, ts
+    )
+
     summary = {
         "timestamp": ts,
         "user_profile": profile,
@@ -1312,6 +1500,8 @@ def generate_report(
             "landmark_trigger_count": landmark_trigger_count,
             "landmark_active_step_count": landmark_active_step_count,
             "landmark_match_count": landmark_match_count,
+            "guidance_reference_step_count": guidance_reference_step_count,
+            "reference_active_step_count": reference_active_step_count,
             "stop_probe_count": stop_probe_count,
             "actr_iw_high_count": actr_iw_high_count,
             "actr_iw_resume_count": actr_iw_resume_count,
@@ -1393,6 +1583,12 @@ def generate_report(
             lm_active_steps = sum(
                 1 for r in env_rows if r["matched_landmark"] != "none"
             )
+            reference_active_steps = sum(
+                1 for r in env_rows if _row_reference_present(r)
+            )
+            guidance_reference_steps = sum(
+                1 for r in env_rows if _row_guidance_flags(r)["route"]
+            )
             lm_triggers = sum(
                 1 for r in env_rows if _is_truthy(r.get("landmark_triggered", False))
             )
@@ -1403,6 +1599,14 @@ def generate_report(
                 "landmark_active_steps": lm_active_steps,
                 "landmark_rate": round(
                     lm_active_steps / len(env_rows) if env_rows else 0.0, 4
+                ),
+                "reference_active_steps": reference_active_steps,
+                "reference_rate": round(
+                    reference_active_steps / len(env_rows) if env_rows else 0.0, 4
+                ),
+                "guidance_reference_steps": guidance_reference_steps,
+                "guidance_reference_rate": round(
+                    guidance_reference_steps / len(env_rows) if env_rows else 0.0, 4
                 ),
                 "landmark_trigger_rate": round(
                     lm_triggers / len(env_rows) if env_rows else 0.0, 4
@@ -1434,6 +1638,7 @@ def generate_report(
         }
     summary["module_stats"] = module_stats
     summary["module_data_csv"] = module_csv_path
+    summary["single_simulation_data_csv"] = single_simulation_csv_path
     if initial_production_utilities:
         sorted_utilities = sorted(
             initial_production_utilities.items(),
@@ -1517,6 +1722,12 @@ def generate_report(
         )
         md.write(
             f"| 有参照支持的步数（地标+盲杖引导+盲道） | {spatial_anchored_count} / {steps} ({_safe_pct(spatial_anchored_count, steps):.1f}%) |\n"
+        )
+        md.write(
+            f"| 导航参照存在步数（盲道/墙/栏杆/路线/地标） | {reference_active_step_count} / {steps} ({_safe_pct(reference_active_step_count, steps):.1f}%) |\n"
+        )
+        md.write(
+            f"| 其中：引导物/路线参照步数 | {guidance_reference_step_count} / {steps} ({_safe_pct(guidance_reference_step_count, steps):.1f}%) |\n"
         )
         md.write(f"| 其中：音频语义地标触发次数 | {landmark_trigger_count} |\n")
         md.write(
@@ -1631,16 +1842,17 @@ def generate_report(
 
         if env_stats:
             md.write(
-                "| 环境类型 | 总步数 | 地标触发次数 | 地标触发步数 | 步数占比 | 平均错误负荷 | 错误负荷标差 |\n"
+                "| 环境类型 | 总步数 | 地标触发次数 | 语义地标步数 | 导航参照步数 | 导航参照占比 | 平均错误负荷 | 错误负荷标差 |\n"
             )
             md.write(
-                "|---------|--------|----------|----------|---------|----------|----------|\n"
+                "|---------|--------|----------|----------|----------|---------|----------|----------|\n"
             )
             for env_type in sorted(env_stats.keys()):
                 stats = env_stats[env_type]
                 md.write(
                     f"| {env_type} | {stats['total_steps']} | {stats['landmark_triggered']} | "
-                    f"{stats['landmark_active_steps']} | {stats['landmark_rate']:.1%} | "
+                    f"{stats['landmark_active_steps']} | {stats['reference_active_steps']} | "
+                    f"{stats['reference_rate']:.1%} | "
                     f"{stats['error_mean']:.4f} | {stats['error_std']:.4f} |\n"
                 )
             md.write("\n")
@@ -1649,7 +1861,10 @@ def generate_report(
                 "- **地标触发次数**: 新识别出一个地标事件的次数，适合与实测“几次认出地标”对齐\n"
             )
             md.write(
-                "- **地标触发步数/步数占比**: 地标事件持续作为空间参照的步数，适合与实测“地标影响持续多久”对齐\n"
+                "- **语义地标步数**: 仅统计 matched_landmark，不包含盲道、墙、栏杆、路线等引导参照\n"
+            )
+            md.write(
+                "- **导航参照步数/占比**: 统计盲道、墙、栏杆、路线、语义地标任一参照存在的步数，更适合当前设备介入 UI\n"
             )
             md.write(
                 "- **错误负荷**: ACT-R 感知-运动通道的平均错误负荷指标（范围不限定在 [0,1]）\n"
@@ -1745,6 +1960,7 @@ def generate_report(
     print("\n[报告已生成]:")
     print(f"   Markdown: {md_path}")
     print(f"   CSV 数据: {csv_path}")
+    print(f"   单轮模拟数据CSV: {single_simulation_csv_path}")
     print(f"   模块CSV: {module_csv_path}")
     print(f"   JSON 摘要: {json_path}")
     if typical_outputs_md_path:
