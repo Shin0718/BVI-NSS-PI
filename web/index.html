@@ -765,6 +765,21 @@
       max-width: 100%;
     }
 
+    .designer-slot-group {
+      position: absolute;
+      z-index: 10;
+      width: clamp(96px, 9vw, 128px);
+      display: grid;
+      grid-template-rows: repeat(3, minmax(24px, auto));
+      gap: 4px;
+    }
+
+    .designer-slot-group .designer-drop-zone {
+      position: relative;
+      width: 100%;
+      height: clamp(24px, 2.25vw, 30px);
+    }
+
     .designer-slot-label {
       position: absolute;
       z-index: 11;
@@ -1182,10 +1197,16 @@
                     <i class="designer-route-arrow vertical delay-2"></i>
                     <div class="designer-slot-label" style="left:39%;bottom:24%;">Intersection</div>
                     <div class="designer-slot-label" style="right:13%;bottom:28%;">Segment</div>
-                    <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="function" style="left:38%;bottom:17%;"><span>Function</span></div>
-                    <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="trigger" style="left:38%;bottom:10%;"><span>Trigger</span></div>
-                    <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="function" style="right:14%;bottom:20%;"><span>Function</span></div>
-                    <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="trigger" style="right:14%;bottom:13%;"><span>Trigger</span></div>
+                    <div class="designer-slot-group" data-slot="mid-road" data-scope="intersection" style="left:38%;bottom:10%;">
+                      <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="function"><span>Function</span></div>
+                      <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="trigger"><span>Trigger</span></div>
+                      <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="trigger"><span>Trigger</span></div>
+                    </div>
+                    <div class="designer-slot-group" data-slot="turn-crossing" data-scope="segment" style="right:14%;bottom:13%;">
+                      <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="function"><span>Function</span></div>
+                      <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="trigger"><span>Trigger</span></div>
+                      <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="trigger"><span>Trigger</span></div>
+                    </div>
                     <div class="designer-dot" style="left:12%;bottom:16%;"></div>
                     <div class="designer-dot orange" style="right:29%;top:32%;"></div>
                     <div class="designer-dot orange" style="right:30.4%;top:18%;"></div>
@@ -1378,21 +1399,31 @@
       deviceModalBackdrop.setAttribute("aria-hidden", "false");
     }
 
-    function resetDropZone(zone) {
+    function clearDesignerZone(zone) {
       delete zone.dataset.value;
       delete zone.dataset.label;
       zone.classList.remove("filled", "is-over");
       zone.querySelector("span").textContent = zone.dataset.kind === "function" ? "Function" : "Trigger";
-      if (zone.dataset.extra === "true") zone.remove();
     }
 
-    function cleanupEmptyExtraDropZones(slot = null, kind = null) {
+    function resetDropZone(zone) {
+      const group = zone.closest(".designer-slot-group");
+      if (zone.dataset.kind === "function" && group) {
+        group.querySelectorAll(".designer-drop-zone").forEach(clearDesignerZone);
+        if (group.dataset.extra === "true") group.remove();
+        return;
+      }
+      clearDesignerZone(zone);
+    }
+
+    function cleanupEmptyExtraDropZones(slot = null) {
       const selector = [
-        ".designer-drop-zone[data-extra='true']:not(.filled)",
-        slot ? `[data-slot="${slot}"]` : "",
-        kind ? `[data-kind="${kind}"]` : ""
+        ".designer-slot-group[data-extra='true']",
+        slot ? `[data-slot="${slot}"]` : ""
       ].join("");
-      document.querySelectorAll(selector).forEach((zone) => zone.remove());
+      document.querySelectorAll(selector).forEach((group) => {
+        if (!group.querySelector(".designer-drop-zone.filled")) group.remove();
+      });
     }
 
     function closeDeviceModal(options = {}) {
@@ -1404,7 +1435,7 @@
         }
         if (deviceModalSession.newZone) {
           resetDropZone(deviceModalSession.newZone);
-          cleanupEmptyExtraDropZones(deviceModalSession.newZone.dataset.slot, deviceModalSession.newZone.dataset.kind);
+          cleanupEmptyExtraDropZones(deviceModalSession.newZone.dataset.slot);
         }
       }
       deviceModalSession = null;
@@ -1483,45 +1514,46 @@
       });
     });
 
-    function shiftedDesignerPosition(zone) {
-      const style = zone.getAttribute("style") || "";
-      const offset = 8;
+    function shiftedDesignerPosition(group) {
+      const style = group.getAttribute("style") || "";
+      const offset = 15;
       return style.replace(/(top|bottom):([0-9.]+)%/g, (match, edge, value) => {
         const current = Number(value);
-        const direction = zone.dataset.kind === "function" ? 1 : -1;
-        const next = edge === "bottom" ? current + direction * offset : current - direction * offset;
+        const next = current + offset;
         return `${edge}:${Math.max(4, Math.min(88, next))}%`;
       });
     }
 
-    function maxDesignerZones(zone) {
-      return zone.dataset.kind === "trigger" ? 2 : 2;
+    function maxDesignerGroups() {
+      return 3;
     }
 
-    function matchingDesignerZones(zone) {
+    function matchingDesignerGroups(zone) {
       return Array.from(document.querySelectorAll(
-        `.designer-drop-zone[data-slot="${zone.dataset.slot}"][data-kind="${zone.dataset.kind}"]`
+        `.designer-slot-group[data-slot="${zone.dataset.slot}"]`
       ));
     }
 
-    function hasEmptyDesignerSiblingZone(zone) {
+    function hasEmptyDesignerFunctionGroup(zone) {
       return Boolean(document.querySelector(
-        `.designer-drop-zone[data-slot="${zone.dataset.slot}"][data-kind="${zone.dataset.kind}"]:not(.filled)`
+        `.designer-slot-group[data-slot="${zone.dataset.slot}"] .designer-drop-zone[data-kind="function"]:not(.filled)`
       ));
     }
 
-    function addDesignerFollowupZone(zone) {
-      if (matchingDesignerZones(zone).length >= maxDesignerZones(zone)) return;
-      if (hasEmptyDesignerSiblingZone(zone)) return;
-      const clone = zone.cloneNode(true);
-      clone.classList.remove("filled", "is-over");
-      delete clone.dataset.value;
-      delete clone.dataset.label;
+    function addDesignerFollowupGroup(zone) {
+      if (zone.dataset.kind !== "function") return;
+      const group = zone.closest(".designer-slot-group");
+      if (!group) return;
+      if (matchingDesignerGroups(zone).length >= maxDesignerGroups()) return;
+      if (hasEmptyDesignerFunctionGroup(zone)) return;
+      const clone = group.cloneNode(true);
       clone.dataset.extra = "true";
-      clone.setAttribute("style", shiftedDesignerPosition(zone));
-      clone.querySelector("span").textContent = clone.dataset.kind === "function" ? "Function" : "Trigger";
-      zone.after(clone);
-      bindDesignerDropZone(clone);
+      clone.setAttribute("style", shiftedDesignerPosition(group));
+      clone.querySelectorAll(".designer-drop-zone").forEach((cloneZone) => {
+        clearDesignerZone(cloneZone);
+        bindDesignerDropZone(cloneZone);
+      });
+      group.after(clone);
     }
 
     function bindDesignerDropZone(zone) {
@@ -1560,7 +1592,7 @@
         zone.dataset.label = payload.label;
         zone.classList.add("filled");
         zone.querySelector("span").textContent = payload.label;
-        addDesignerFollowupZone(zone);
+        addDesignerFollowupGroup(zone);
         if (payload.kind === "function") {
           document.querySelectorAll(".designer-function").forEach((item) => {
             item.classList.toggle("active", item.dataset.key === payload.key);
@@ -1599,9 +1631,8 @@
           clickTimer = null;
         }
         const slot = zone.dataset.slot;
-        const kind = zone.dataset.kind;
         resetDropZone(zone);
-        cleanupEmptyExtraDropZones(slot, kind);
+        cleanupEmptyExtraDropZones(slot);
       });
     }
 
@@ -1770,24 +1801,31 @@
 
     function collectDesignerRouteTemplate() {
       const slotMap = new Map();
-      document.querySelectorAll(".designer-drop-zone.filled").forEach((zone) => {
-        const slotId = zone.dataset.slot;
+      document.querySelectorAll(".designer-slot-group").forEach((group) => {
+        const slotId = group.dataset.slot;
         if (!slotMap.has(slotId)) {
           slotMap.set(slotId, {
             slot_id: slotId,
-            scope: zone.dataset.scope || "segment",
+            scope: group.dataset.scope || "segment",
             functions: [],
-            triggers: []
+            triggers: [],
+            groups: []
           });
         }
         const slot = slotMap.get(slotId);
-        const value = zone.dataset.value;
-        if (!value) return;
-        if (zone.dataset.kind === "function") {
-          slot.functions.push(value);
-        } else if (zone.dataset.kind === "trigger") {
-          slot.triggers.push(value === "none" ? "always_on" : value);
-        }
+        const functionZone = group.querySelector('.designer-drop-zone[data-kind="function"].filled');
+        const functionValue = functionZone?.dataset.value;
+        if (!functionValue) return;
+        const triggerValues = Array.from(group.querySelectorAll('.designer-drop-zone[data-kind="trigger"].filled'))
+          .map((zone) => zone.dataset.value === "none" ? "always_on" : zone.dataset.value)
+          .filter(Boolean);
+        const normalizedTriggers = triggerValues.length ? Array.from(new Set(triggerValues)) : ["always_on"];
+        slot.groups.push({
+          function: functionValue,
+          triggers: normalizedTriggers
+        });
+        slot.functions.push(functionValue);
+        slot.triggers.push(...normalizedTriggers);
       });
 
       const slots = Array.from(slotMap.values())
@@ -1796,7 +1834,7 @@
           functions: Array.from(new Set(slot.functions)),
           triggers: Array.from(new Set(slot.triggers.length ? slot.triggers : ["always_on"]))
         }))
-        .filter((slot) => slot.functions.length);
+        .filter((slot) => slot.groups.length);
 
       return {
         apply_mode: "global_by_scope",
@@ -1896,13 +1934,9 @@
     }
 
     function resetDesignerDropZones() {
-      document.querySelectorAll(".designer-drop-zone[data-extra='true']").forEach((zone) => zone.remove());
+      document.querySelectorAll(".designer-slot-group[data-extra='true']").forEach((group) => group.remove());
       document.querySelectorAll(".designer-drop-zone").forEach((zone) => {
-        delete zone.dataset.value;
-        delete zone.dataset.label;
-        zone.classList.remove("filled", "is-over");
-        const label = zone.dataset.kind === "function" ? "Function" : "Trigger";
-        zone.querySelector("span").textContent = label;
+        clearDesignerZone(zone);
       });
     }
 
