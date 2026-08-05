@@ -146,6 +146,8 @@
       height: 28px;
       object-fit: contain;
       display: block;
+      filter: brightness(0) saturate(100%);
+      opacity: 0.9;
     }
 
     .card {
@@ -1180,7 +1182,6 @@
                     <i class="designer-route-arrow vertical delay-2"></i>
                     <div class="designer-slot-label" style="left:39%;bottom:24%;">Intersection</div>
                     <div class="designer-slot-label" style="right:13%;bottom:28%;">Segment</div>
-                    <div class="designer-slot-label" style="right:20%;top:33%;">Segment</div>
                     <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="function" style="left:38%;bottom:17%;"><span>Function</span></div>
                     <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="trigger" style="left:38%;bottom:10%;"><span>Trigger</span></div>
                     <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="function" style="right:14%;bottom:20%;"><span>Function</span></div>
@@ -1526,6 +1527,7 @@
     }
 
     function bindDesignerDropZone(zone) {
+      let clickTimer = null;
       zone.addEventListener("dragenter", (event) => {
         event.preventDefault();
         zone.classList.add("is-over");
@@ -1577,19 +1579,27 @@
         }
       });
       zone.addEventListener("click", () => {
-        if (!zone.classList.contains("filled") || zone.dataset.kind !== "function") return;
-        const key = zone.dataset.value;
-        if (!key || !defaultDeviceParameters[key]) return;
-        document.querySelectorAll(".designer-function").forEach((item) => {
-          item.classList.toggle("active", item.dataset.key === key);
-        });
-        const snapshot = cloneData(defaultDeviceParameters[key]);
-        setDesignerPreset(key);
-        openDeviceModal({ key, snapshot, newZone: null });
+        if (clickTimer) window.clearTimeout(clickTimer);
+        clickTimer = window.setTimeout(() => {
+          clickTimer = null;
+          if (!zone.classList.contains("filled") || zone.dataset.kind !== "function") return;
+          const key = zone.dataset.value;
+          if (!key || !defaultDeviceParameters[key]) return;
+          document.querySelectorAll(".designer-function").forEach((item) => {
+            item.classList.toggle("active", item.dataset.key === key);
+          });
+          const snapshot = cloneData(defaultDeviceParameters[key]);
+          setDesignerPreset(key);
+          openDeviceModal({ key, snapshot, newZone: null });
+        }, 220);
       });
       zone.addEventListener("dblclick", (event) => {
         event.preventDefault();
         event.stopPropagation();
+        if (clickTimer) {
+          window.clearTimeout(clickTimer);
+          clickTimer = null;
+        }
         const slot = zone.dataset.slot;
         const kind = zone.dataset.kind;
         resetDropZone(zone);
