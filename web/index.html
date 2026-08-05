@@ -1516,7 +1516,7 @@
 
     function shiftedDesignerPosition(group) {
       const style = group.getAttribute("style") || "";
-      const offset = 15;
+      const offset = 24;
       return style.replace(/(top|bottom):([0-9.]+)%/g, (match, edge, value) => {
         const current = Number(value);
         const next = current + offset;
