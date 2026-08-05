@@ -763,6 +763,21 @@
       max-width: 100%;
     }
 
+    .designer-slot-label {
+      position: absolute;
+      z-index: 11;
+      min-width: 72px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(19,22,24,.68);
+      border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.9);
+      font-size: 10px;
+      font-weight: 900;
+      text-align: center;
+      pointer-events: none;
+    }
+
     .designer-legend {
       display: flex;
       align-items: center;
@@ -980,6 +995,35 @@
     .device-modal.other-mode .designer-range-only { display: none; }
     .device-modal.other-mode .designer-other-only { display: grid; }
 
+    .device-modal-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,.14);
+    }
+
+    .device-modal-actions button {
+      height: 40px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .device-modal-actions .confirm {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .device-modal-actions .cancel {
+      border: 1px solid rgba(190,199,205,.42);
+      background: rgba(15,17,19,.35);
+      color: #dce0e2;
+    }
+
     @media (max-width: 1180px) {
       .layout {
         grid-template-columns: 1fr;
@@ -1090,7 +1134,7 @@
             <div class="device-designer">
               <div class="designer-shell">
                 <aside class="designer-panel designer-side">
-                  <div class="designer-head"><strong>Functions</strong><span>function</span></div>
+                  <div class="designer-head"><strong>Functions</strong></div>
                   <nav class="designer-functions" aria-label="Functions">
                     <button class="designer-function active" data-key="obstacle" data-kind="function" draggable="true" type="button">Obstacle Detection</button>
                     <button class="designer-function" data-key="terrain" data-kind="function" draggable="true" type="button">Terrain Detection</button>
@@ -1102,7 +1146,7 @@
                 </aside>
 
                 <aside class="designer-panel designer-trigger">
-                  <div class="designer-head"><strong>Triggers</strong><span>trigger</span></div>
+                  <div class="designer-head"><strong>Triggers</strong></div>
                   <div class="designer-trigger-card" data-trigger="obstacle" data-kind="trigger" draggable="true">Obstacle</div>
                   <div class="designer-trigger-card" data-trigger="vehicle" data-kind="trigger" draggable="true">Vehicle</div>
                   <div class="designer-trigger-card" data-trigger="pedestrian" data-kind="trigger" draggable="true">Pedestrian</div>
@@ -1134,6 +1178,9 @@
                     <i class="designer-route-arrow vertical"></i>
                     <i class="designer-route-arrow vertical delay-1"></i>
                     <i class="designer-route-arrow vertical delay-2"></i>
+                    <div class="designer-slot-label" style="left:39%;bottom:24%;">Intersection</div>
+                    <div class="designer-slot-label" style="right:13%;bottom:28%;">Segment</div>
+                    <div class="designer-slot-label" style="right:20%;top:33%;">Segment</div>
                     <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="function" style="left:38%;bottom:17%;"><span>Function</span></div>
                     <div class="designer-drop-zone" data-slot="mid-road" data-scope="intersection" data-kind="trigger" style="left:38%;bottom:10%;"><span>Trigger</span></div>
                     <div class="designer-drop-zone" data-slot="turn-crossing" data-scope="segment" data-kind="function" style="right:14%;bottom:20%;"><span>Function</span></div>
@@ -1221,7 +1268,7 @@
       </div><span></span></div>
       <div class="designer-setting-row wide designer-generic-only"><span class="designer-bullet"></span><div data-designer-simulator>Obstacle recognition range simulator</div></div>
       <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>Recognition Range</label><div class="designer-static-value" data-designer-range>Default</div><span></span></div>
-      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>Cane Range Multiplier</label><input class="designer-input" data-designer-param="recognition_rate" data-designer-factor /><span class="designer-hint-text">0~10</span></div>
+      <div class="designer-setting-row designer-generic-only designer-range-only"><span></span><label>Range Multiplier</label><input class="designer-input" data-designer-param="recognition_rate" data-designer-factor /><span class="designer-hint-text">0~10</span></div>
       <div class="designer-setting-row designer-other-only"><span></span><label>Simulation Probability</label><input class="designer-input" data-designer-param="recognition_rate" /><span></span></div>
       <div class="designer-setting-row"><span></span><label>Active Duration</label><input class="designer-input" data-designer-param="action_duration" /><span></span></div>
       <div class="designer-setting-row"><span></span><label>Preparation Duration</label><input class="designer-input" data-designer-param="preparation_duration" /><span></span></div>
@@ -1241,6 +1288,10 @@
         <div class="designer-setting-row"><span class="designer-bullet"></span><label>Alert Duration</label><input class="designer-input" data-designer-param="feedback.duration" /><span></span></div>
         <div class="designer-setting-row"><span class="designer-bullet"></span><label>Alert Frequency</label><input class="designer-input" data-designer-param="feedback.frequency" /><span></span></div>
         <div class="designer-setting-row"><span class="designer-bullet"></span><label>Competition Factor</label><input class="designer-input" data-designer-param="feedback.competition" /><span></span></div>
+      </div>
+      <div class="device-modal-actions">
+        <button class="cancel" id="deviceModalCancel" type="button">Cancel</button>
+        <button class="confirm" id="deviceModalConfirm" type="button">Confirm</button>
       </div>
     </section>
   </div>
@@ -1299,6 +1350,11 @@
 
     const deviceModalBackdrop = document.getElementById("deviceModalBackdrop");
     const deviceSettingsModal = document.getElementById("deviceSettingsModal");
+    let deviceModalSession = null;
+
+    function cloneData(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
 
     function setDesignerPreset(key) {
       const preset = designerPresets[key] || designerPresets.obstacle;
@@ -1317,12 +1373,42 @@
       syncDesignerInputsFromState();
     }
 
-    function openDeviceModal() {
+    function openDeviceModal(session = null) {
+      deviceModalSession = session;
       deviceModalBackdrop.classList.add("active");
       deviceModalBackdrop.setAttribute("aria-hidden", "false");
     }
 
-    function closeDeviceModal() {
+    function resetDropZone(zone) {
+      delete zone.dataset.value;
+      delete zone.dataset.label;
+      zone.classList.remove("filled", "is-over");
+      zone.querySelector("span").textContent = zone.dataset.kind === "function" ? "Function" : "Trigger";
+      if (zone.dataset.extra === "true") zone.remove();
+    }
+
+    function cleanupEmptyExtraDropZones(slot = null, kind = null) {
+      const selector = [
+        ".designer-drop-zone[data-extra='true']:not(.filled)",
+        slot ? `[data-slot="${slot}"]` : "",
+        kind ? `[data-kind="${kind}"]` : ""
+      ].join("");
+      document.querySelectorAll(selector).forEach((zone) => zone.remove());
+    }
+
+    function closeDeviceModal(options = {}) {
+      const commit = Boolean(options.commit);
+      if (deviceModalSession && !commit) {
+        if (deviceModalSession.key && deviceModalSession.snapshot) {
+          defaultDeviceParameters[deviceModalSession.key] = cloneData(deviceModalSession.snapshot);
+          setDesignerPreset(deviceModalSession.key);
+        }
+        if (deviceModalSession.newZone) {
+          resetDropZone(deviceModalSession.newZone);
+          cleanupEmptyExtraDropZones(deviceModalSession.newZone.dataset.slot, deviceModalSession.newZone.dataset.kind);
+        }
+      }
+      deviceModalSession = null;
       deviceModalBackdrop.classList.remove("active");
       deviceModalBackdrop.setAttribute("aria-hidden", "true");
     }
@@ -1336,12 +1422,14 @@
       });
     });
 
-    document.getElementById("deviceModalClose").addEventListener("click", closeDeviceModal);
+    document.getElementById("deviceModalClose").addEventListener("click", () => closeDeviceModal({ commit: false }));
+    document.getElementById("deviceModalCancel").addEventListener("click", () => closeDeviceModal({ commit: false }));
+    document.getElementById("deviceModalConfirm").addEventListener("click", () => closeDeviceModal({ commit: true }));
     deviceModalBackdrop.addEventListener("click", (event) => {
-      if (event.target === deviceModalBackdrop) closeDeviceModal();
+      if (event.target === deviceModalBackdrop) closeDeviceModal({ commit: false });
     });
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && deviceModalBackdrop.classList.contains("active")) closeDeviceModal();
+      if (event.key === "Escape" && deviceModalBackdrop.classList.contains("active")) closeDeviceModal({ commit: false });
     });
 
     document.querySelectorAll(".designer-mode button, .designer-terrain-types button").forEach((button) => {
@@ -1407,6 +1495,16 @@
       });
     }
 
+    function maxDesignerZones(zone) {
+      return zone.dataset.kind === "trigger" ? 2 : 2;
+    }
+
+    function matchingDesignerZones(zone) {
+      return Array.from(document.querySelectorAll(
+        `.designer-drop-zone[data-slot="${zone.dataset.slot}"][data-kind="${zone.dataset.kind}"]`
+      ));
+    }
+
     function hasEmptyDesignerSiblingZone(zone) {
       return Boolean(document.querySelector(
         `.designer-drop-zone[data-slot="${zone.dataset.slot}"][data-kind="${zone.dataset.kind}"]:not(.filled)`
@@ -1414,6 +1512,7 @@
     }
 
     function addDesignerFollowupZone(zone) {
+      if (matchingDesignerZones(zone).length >= maxDesignerZones(zone)) return;
       if (hasEmptyDesignerSiblingZone(zone)) return;
       const clone = zone.cloneNode(true);
       clone.classList.remove("filled", "is-over");
@@ -1454,6 +1553,9 @@
           }
         }
         if (!payload || payload.kind !== zone.dataset.kind) return;
+        const previousValue = zone.dataset.value;
+        const previousLabel = zone.dataset.label;
+        const previousFilled = zone.classList.contains("filled");
         zone.dataset.value = payload.key;
         zone.dataset.label = payload.label;
         zone.classList.add("filled");
@@ -1463,15 +1565,35 @@
           document.querySelectorAll(".designer-function").forEach((item) => {
             item.classList.toggle("active", item.dataset.key === payload.key);
           });
+          const snapshot = cloneData(defaultDeviceParameters[payload.key] || {});
           setDesignerPreset(payload.key);
-          openDeviceModal();
+          openDeviceModal({
+            key: payload.key,
+            snapshot,
+            newZone: previousFilled ? null : zone,
+            previousValue,
+            previousLabel
+          });
         }
       });
       zone.addEventListener("click", () => {
-        delete zone.dataset.value;
-        delete zone.dataset.label;
-        zone.classList.remove("filled");
-        zone.querySelector("span").textContent = zone.dataset.kind === "function" ? "Function" : "Trigger";
+        if (!zone.classList.contains("filled") || zone.dataset.kind !== "function") return;
+        const key = zone.dataset.value;
+        if (!key || !defaultDeviceParameters[key]) return;
+        document.querySelectorAll(".designer-function").forEach((item) => {
+          item.classList.toggle("active", item.dataset.key === key);
+        });
+        const snapshot = cloneData(defaultDeviceParameters[key]);
+        setDesignerPreset(key);
+        openDeviceModal({ key, snapshot, newZone: null });
+      });
+      zone.addEventListener("dblclick", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const slot = zone.dataset.slot;
+        const kind = zone.dataset.kind;
+        resetDropZone(zone);
+        cleanupEmptyExtraDropZones(slot, kind);
       });
     }
 
