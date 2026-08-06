@@ -6,6 +6,11 @@ Current status: **Beta · Research Prototype**. The current web designer UI and 
 
 This repository is intentionally limited to the runnable system. Calibration materials, generated figures, cached map files, and previous simulation outputs are not included.
 
+```bash
+Get-NetTCPConnection -LocalPort 8767 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+netstat -ano | findstr :8767   # Verify
+```
+
 ## Quick Start
 
 Clone the repository:
@@ -84,7 +89,7 @@ Main modules:
 - `environment.py`: map and route environment construction.
 - `inference.py`: risk inference utilities.
 - `actr_setup.py`: ACT-R model, buffers, chunks, and production setup.
-- `reporting.py`: CSV, JSON, Markdown, and figure output generation.
+- `reporting.py`: CSV, JSON, and figure output generation.
 
 ## Requirements
 
@@ -130,7 +135,12 @@ Generated reports are written to `reports/`. Each UI-triggered run records both 
 
 - `sim_summary_<timestamp>.json`
 - `sim_ui_config_<timestamp>.json`
-- `sim_io_report_<timestamp>.md`
+- `sim_data_<timestamp>.csv`
+- `sim_module_data_<timestamp>.csv`
+- `single_simulation_data_<timestamp>.csv`
+- `scenario_summary_<timestamp>.csv`
+
+In report interpretation, `stop_and_probe` retains its original model action code. During a green-light crossing, however, it is reported as **“绿灯穿越阶段探测与重新定向行为比例”** (`green_crossing_probe_reorientation_ratio`), because the agent continues forward while carrying out probing, confirmation, disorientation correction, or reorientation. This reporting label does not change the ACT-R decision or movement mechanism.
 
 Runtime outputs, map caches, and Python cache files are ignored by git.
 

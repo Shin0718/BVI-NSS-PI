@@ -84,14 +84,13 @@ def _safe_stdev(values):
     return stdev(values) if len(values) >= 2 else 0.0
 
 
-def _summarize_run_row(run_index, seed, summary_json, sim_csv, sim_md, summary):
+def _summarize_run_row(run_index, seed, summary_json, sim_csv, summary):
     """Handle summarize run row behavior."""
     return {
         "run": int(run_index),
         "seed": int(seed),
         "summary_json": str(summary_json),
         "sim_csv": str(sim_csv),
-        "sim_md": str(sim_md),
         "total_steps": int(summary.get("result", {}).get("total_steps", 0)),
         "reached_goal": bool(summary.get("result", {}).get("reached_goal", False)),
         "stop_probe_count": int(summary.get("result", {}).get("stop_probe_count", 0)),
@@ -134,7 +133,7 @@ def run_monte_carlo(
         random.seed(seed)
         np.random.seed(seed)
 
-        md_path, csv_path, json_path = run_simulation(
+        _, csv_path, json_path = run_simulation(
             familiarity_level=user_profile["familiarity_level"],
         )
 
@@ -146,7 +145,6 @@ def run_monte_carlo(
             seed=seed,
             summary_json=json_path,
             sim_csv=csv_path,
-            sim_md=md_path,
             summary=summary,
         )
         rows.append(row)

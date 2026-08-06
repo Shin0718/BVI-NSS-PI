@@ -231,6 +231,196 @@ LANDMARK_EPISODE_STEPS_MAX = 9
 LANDMARK_REFRACTORY_STEPS_MIN = 18
 LANDMARK_REFRACTORY_STEPS_MAX = 35
 
+# Filled temporarily by server.py for each UI run. Only functions actually
+# placed in the route template are included.
+DESIGNER_DEVICE_CONFIG = {"slots": [], "functions": {}, "device_trust": 0.65}
+DEVICE_FUNCTION_KEYS = ("obstacle", "terrain", "pedestrian", "vehicle", "guidance", "other")
+DEVICE_NULL = "null"
+
+
+def _device_modality(value):
+    text = str(value or "auditory").strip().lower()
+    if text in {"tactile", "vibration", "触觉", "振动"}:
+        return "tactile"
+    if text in {"traction", "manual", "牵引力", "手动"}:
+        return "manual"
+    return "auditory"
+
+
+def _device_scope(at_intersection, crossing_active):
+    return "intersection" if (at_intersection or crossing_active) else "segment"
+
+
+def _init_device_runtime(config):
+    config = config if isinstance(config, dict) else {}
+    functions = config.get("functions") if isinstance(config.get("functions"), dict) else {}
+    slots = config.get("slots") if isinstance(config.get("slots"), list) else []
+    return {
+        "functions": functions,
+        "slots": slots,
+        "present": set(functions),
+        "previous_targets": {key: False for key in DEVICE_FUNCTION_KEYS},
+        "jobs": [],
+    }
+
+
+def _device_empty_fields(runtime):
+    fields = {}
+    present = runtime["present"]
+    for key in DEVICE_FUNCTION_KEYS:
+        if key not in present:
+            values = {
+                "detection_probability": DEVICE_NULL,
+                "detected": DEVICE_NULL,
+                "alert": DEVICE_NULL,
+                "alert_active": DEVICE_NULL,
+                "missed": DEVICE_NULL,
+                "target": DEVICE_NULL,
+            }
+        else:
+            values = {
+                "detection_probability": 0.0,
+                "detected": 0,
+                "alert": 0,
+                "alert_active": 0,
+                "missed": 0,
+                "target": "none",
+            }
+        for suffix, value in values.items():
+            fields[f"device_{key}_{suffix}"] = value
+    return fields
+
+
+def _begin_device_step(runtime):
+    """Advance pending alerts before sensory and workload calculations."""
+    fields = _device_empty_fields(runtime)
+    modality_demand = {"auditory": 0.0, "tactile": 0.0, "manual": 0.0}
+    sources = []
+    remaining_jobs = []
+
+    for job in runtime["jobs"]:
+        if job["delay"] > 0:
+            job["delay"] -= 1
+            remaining_jobs.append(job)
+            continue
+        if job["remaining"] <= 0:
+            continue
+
+        key = job["function"]
+        modality = job["modality"]
+        active_index = job["duration_steps"] - job["remaining"]
+        pulse = (active_index % job["interval_steps"]) == 0
+        fields[f"device_{key}_alert_active"] = 1
+        if pulse:
+            fields[f"device_{key}_alert"] = 1
+        modality_demand[modality] += job["demand"]
+        sources.append(key)
+        job["remaining"] -= 1
+        if job["remaining"] > 0:
+            remaining_jobs.append(job)
+
+    runtime["jobs"] = remaining_jobs
+    for modality in modality_demand:
+        modality_demand[modality] = clamp(modality_demand[modality], low=0.0, high=1.0)
+
+    return {
+        "fields": fields,
+        "auditory_demand": modality_demand["auditory"],
+        "tactile_demand": modality_demand["tactile"],
+        "manual_demand": modality_demand["manual"],
+        "alert_sources": sorted(set(sources)),
+    }
+
+
+def _device_slot_active(slot, scope, trigger_events):
+    if str(slot.get("scope", "segment")) != scope:
+        return False
+    triggers = slot.get("triggers") or ["always_on"]
+    return any(trigger == "always_on" or bool(trigger_events.get(trigger, False)) for trigger in triggers)
+
+
+def _device_function_slots(runtime, function_key, scope):
+    return [
+        slot
+        for slot in runtime["slots"]
+        if function_key in (slot.get("functions") or [])
+        and str(slot.get("scope", "segment")) == scope
+    ]
+
+
+def _schedule_device_alert(runtime, function_key, params):
+    feedback = params.get("feedback") if isinstance(params.get("feedback"), dict) else {}
+    modality = _device_modality(feedback.get("modality"))
+    preparation_s = max(0.0, float(params.get("preparation_duration") or 0.0))
+    action_s = max(0.0, float(params.get("action_duration") or 0.0))
+    feedback_s = max(0.0, float(feedback.get("duration") or 0.0))
+    duration_steps = max(1, int(math.ceil(max(action_s, feedback_s, 0.01))))
+    delay_steps = max(0, int(math.ceil(preparation_s)))
+    frequency = max(0.0, float(feedback.get("frequency") or 0.0))
+    interval_steps = 1 if frequency <= 0 else max(1, int(round(1.0 / frequency)))
+    competition = clamp(float(feedback.get("competition") or 0.0), low=0.0, high=5.0)
+    demand = clamp(0.30 + 0.22 * competition + 0.08 * min(3.0, frequency), low=0.15, high=1.0)
+    runtime["jobs"].append(
+        {
+            "function": function_key,
+            "modality": modality,
+            "delay": delay_steps,
+            "remaining": duration_steps,
+            "duration_steps": duration_steps,
+            "interval_steps": interval_steps,
+            "demand": demand,
+        }
+    )
+
+
+def _detect_device_events(runtime, step_state, *, scope, target_events, trigger_events):
+    """Detect fixed world events and schedule later feedback.
+
+    Recognition changes only the device observation. It never changes any
+    environmental boolean passed in ``target_events``.
+    """
+    fields = step_state["fields"]
+    for key in DEVICE_FUNCTION_KEYS:
+        if key not in runtime["present"]:
+            continue
+        params = runtime["functions"].get(key, {})
+        slots = _device_function_slots(runtime, key, scope)
+        fields[f"device_{key}_detection_probability"] = (
+            clamp(float(params.get("recognition_rate") or 0.0), low=0.0, high=1.0)
+            if slots
+            else 0.0
+        )
+
+        active_slots = [slot for slot in slots if _device_slot_active(slot, scope, trigger_events)]
+        target_active, target_name = target_events.get(key, (False, "none"))
+        if key == "other" and active_slots and not target_active:
+            for slot in active_slots:
+                for trigger in slot.get("triggers") or []:
+                    if trigger != "always_on" and trigger_events.get(trigger, False):
+                        target_active = True
+                        target_name = trigger
+                        break
+                if target_active:
+                    break
+
+        fields[f"device_{key}_target"] = target_name if target_active else "none"
+        onset = bool(target_active) and not runtime["previous_targets"].get(key, False)
+        runtime["previous_targets"][key] = bool(target_active)
+        if not (active_slots and onset):
+            continue
+
+        recognition = clamp(float(params.get("recognition_rate") or 0.0), low=0.0, high=1.0)
+        detected = random.random() < recognition
+        miss_prob_raw = params.get("miss_rate")
+        if miss_prob_raw is None:
+            miss_prob_raw = params.get("false_alarm_rate", 0.0)
+        miss_prob = clamp(float(miss_prob_raw or 0.0), low=0.0, high=1.0)
+        alert_created = bool(detected and random.random() >= miss_prob)
+        fields[f"device_{key}_detected"] = int(detected)
+        fields[f"device_{key}_missed"] = int(not alert_created)
+        if alert_created:
+            _schedule_device_alert(runtime, key, params)
+
 
 def _compute_probe_hold_steps():
     """Handle compute probe hold steps behavior."""
@@ -265,6 +455,9 @@ def _compute_pm_channel_shares(
     current_surface_type,
     at_node,
     risk_signal,
+    device_auditory_demand=0.0,
+    device_tactile_demand=0.0,
+    device_manual_demand=0.0,
 ):
     """Handle compute pm channel shares behavior."""
     if not ACTR_DYNAMIC_PM_WEIGHTS_ENABLED:
@@ -282,6 +475,7 @@ def _compute_pm_channel_shares(
         base_scores[0] += 0.35
     if crossing_active and traffic_sound:
         base_scores[0] += 0.25
+    base_scores[0] += 1.10 * clamp(device_auditory_demand, low=0.0, high=1.0)
 
     if cane_obstacle:
         base_scores[1] += 0.90
@@ -289,6 +483,7 @@ def _compute_pm_channel_shares(
         base_scores[1] += 0.25
     if current_surface_type == "tactile_guidance":
         base_scores[1] += 0.30
+    base_scores[1] += 1.10 * clamp(device_tactile_demand, low=0.0, high=1.0)
 
     if crossing_active:
         base_scores[2] += 0.35
@@ -296,6 +491,7 @@ def _compute_pm_channel_shares(
         base_scores[2] += 0.15
     if risk_signal >= 0.55:
         base_scores[2] += 0.20
+    base_scores[2] += 1.10 * clamp(device_manual_demand, low=0.0, high=1.0)
 
     dynamic_shares = _softmax(base_scores, ACTR_DYNAMIC_PM_TEMP)
 
@@ -970,6 +1166,7 @@ def run_simulation(familiarity_level=1):
     actr_commit_rule = None
     actr_rules_fired_this_step = []
     actr_step_pressed_key = None
+    device_runtime = _init_device_runtime(DESIGNER_DEVICE_CONFIG)
 
     for step in range(dynamic_max_steps):
         sim_time = float(sim.show_time())
@@ -1152,6 +1349,23 @@ def run_simulation(familiarity_level=1):
                 f"light={light_state}"
             )
 
+        # Alerts scheduled by prior detections become part of this step's
+        # sensory stream before salience, attention and workload are computed.
+        device_step_state = _begin_device_step(device_runtime)
+        device_auditory_demand = device_step_state["auditory_demand"]
+        device_tactile_demand = device_step_state["tactile_demand"]
+        device_manual_demand = device_step_state["manual_demand"]
+        device_alert_sources = device_step_state["alert_sources"]
+        device_alert_active = bool(device_alert_sources)
+        device_safety_alert_active = any(
+            source in {"obstacle", "terrain", "pedestrian", "vehicle"}
+            for source in device_alert_sources
+        )
+        if device_auditory_demand > 0:
+            sound_level = 1
+            if dominant_sound_type == "none":
+                dominant_sound_type = "device_alert"
+
         _surface_imu_base = {
             "flat_road": 0.18,
             "tactile_guidance": 0.18,
@@ -1178,6 +1392,11 @@ def run_simulation(familiarity_level=1):
             if sound_level == 1
             else random.uniform(0.05, 0.55)
         )
+        if device_auditory_demand > 0:
+            current_intensity = max(
+                current_intensity,
+                clamp(0.48 + 0.42 * device_auditory_demand, low=0.0, high=1.0),
+            )
 
         baseline = (
             mean_safe(list(intensity_history))
@@ -1195,7 +1414,11 @@ def run_simulation(familiarity_level=1):
         else:
             looming_boost = round(looming_boost * LOOMING_BOOST_DECAY, 4)
         sound_salience = clamp(
-            0.52 * positive_change + burst_bonus + looming_boost + noise
+            0.52 * positive_change
+            + burst_bonus
+            + looming_boost
+            + noise
+            + 0.28 * device_auditory_demand
         )
         vehicle_approach_raw = vehicle_approach
         if crossing_active:
@@ -1216,6 +1439,10 @@ def run_simulation(familiarity_level=1):
                     snd_reverse_beep,
                     human_activity_triggered,
                 )
+                if device_auditory_demand > 0:
+                    sound_level = 1
+                    if dominant_sound_type == "none":
+                        dominant_sound_type = "device_alert"
                 looming_boost = round(looming_boost * LOOMING_BOOST_DECAY, 4)
 
         evidence = _build_dbn_evidence(
@@ -1242,9 +1469,10 @@ def run_simulation(familiarity_level=1):
         sal_intensity_aud = clamp((current_intensity - 0.05) / 0.95)
         sal_novelty_aud = clamp(max(0.0, change_rate) + burst_bonus + looming_boost)
         sal_discriminability_aud = clamp(
-            0.65 * float(dominant_sound_type != "none")
-            + 0.20 * float(traffic_sound or human_activity)
-            + 0.15 * float(sound_level == 1)
+            0.55 * float(dominant_sound_type != "none")
+            + 0.18 * float(traffic_sound or human_activity)
+            + 0.12 * float(sound_level == 1)
+            + 0.30 * device_auditory_demand
         )
         sal_tactile_diff_aud = 0.0
         salience_auditory = clamp(
@@ -1269,7 +1497,8 @@ def run_simulation(familiarity_level=1):
             0.20 * sal_intensity_tac
             + 0.20 * sal_novelty_tac
             + 0.20 * sal_discriminability_tac
-            + 0.40 * sal_tactile_diff_tac
+            + 0.30 * sal_tactile_diff_tac
+            + 0.10 * device_tactile_demand
         )
 
         sal_intensity_man = clamp(
@@ -1285,9 +1514,10 @@ def run_simulation(familiarity_level=1):
         )
         sal_tactile_diff_man = 0.0
         salience_manual = clamp(
-            0.45 * sal_intensity_man
-            + 0.30 * sal_novelty_man
-            + 0.25 * sal_discriminability_man
+            0.40 * sal_intensity_man
+            + 0.27 * sal_novelty_man
+            + 0.23 * sal_discriminability_man
+            + 0.10 * device_manual_demand
         )
 
         risk_boost = 0.0
@@ -1298,10 +1528,11 @@ def run_simulation(familiarity_level=1):
         )
 
         value_safety = clamp(
-            0.35 * float(cane_obstacle or dominant_cane_type == "obstacle")
-            + 0.35
+            0.30 * float(cane_obstacle or dominant_cane_type == "obstacle")
+            + 0.30
             * float(dominant_sound_type in {"vehicle_approach", "horn", "reverse_beep"})
-            + 0.30 * float(crossing_active)
+            + 0.25 * float(crossing_active)
+            + 0.20 * float(device_safety_alert_active)
         )
         value_progress = clamp(
             0.45
@@ -1409,6 +1640,58 @@ def run_simulation(familiarity_level=1):
                 f"trigger_p={_landmark_trigger_prob:.4f}, refractory={landmark_refractory_remaining}, "
                 f"A={landmark_activation_terms['activation']:.3f}"
             )
+
+        guidance_target_name = "none"
+        guidance_target_active = False
+        if landmark_triggered:
+            guidance_target_name = "landmark"
+            guidance_target_active = True
+        elif cane_curb:
+            guidance_target_name = "curb"
+            guidance_target_active = True
+        elif cane_wall:
+            guidance_target_name = "wall"
+            guidance_target_active = True
+        elif cane_railing:
+            guidance_target_name = "railing"
+            guidance_target_active = True
+        elif cane_tactile and surface_change:
+            guidance_target_name = "tactile_guidance"
+            guidance_target_active = True
+
+        guidance_params = device_runtime["functions"].get("guidance", {})
+        guidance_targets = set(guidance_params.get("targets") or [])
+        if guidance_target_active and guidance_targets and guidance_target_name not in guidance_targets:
+            guidance_target_active = False
+            guidance_target_name = "none"
+
+        terrain_target_active = bool(surface_change or just_entered_intersection)
+        terrain_target_name = "intersection" if just_entered_intersection else current_surface_type
+        other_target_active = bool(snd_horn or snd_reverse_beep)
+        other_target_name = "horn" if snd_horn else "reverse_beep" if snd_reverse_beep else "none"
+        trigger_events = {
+            "obstacle": bool(cane_obstacle),
+            "vehicle": bool(vehicle_approach_raw),
+            "pedestrian": bool(human_activity_triggered),
+            "landmark": bool(landmark_triggered),
+            "surface": terrain_target_active,
+            "always_on": True,
+        }
+        target_events = {
+            "obstacle": (bool(cane_obstacle), "obstacle"),
+            "terrain": (terrain_target_active, terrain_target_name),
+            "pedestrian": (bool(human_activity_triggered), "pedestrian"),
+            "vehicle": (bool(vehicle_approach_raw), "vehicle_approach"),
+            "guidance": (guidance_target_active, guidance_target_name),
+            "other": (other_target_active, other_target_name),
+        }
+        _detect_device_events(
+            device_runtime,
+            device_step_state,
+            scope=_device_scope(at_intersection, crossing_active),
+            target_events=target_events,
+            trigger_events=trigger_events,
+        )
 
         spatial_anchored = (
             matched_landmark_name != "none"
@@ -1690,11 +1973,21 @@ def run_simulation(familiarity_level=1):
 
         _attn_entry = 1.0 if seev_gate_passed else ATTENTION_UNGATED_ENTRY_COEF
         actr_auditory_active = (
-            int(dominant_sound_type != "none" or nav_announcement or crossing_active)
+            int(
+                dominant_sound_type != "none"
+                or nav_announcement
+                or crossing_active
+                or device_auditory_demand > 0
+            )
             * _attn_entry
         )
         actr_tactile_active = (
-            int(dominant_cane_type != "none" or surface_change or cane_guidance_present)
+            int(
+                dominant_cane_type != "none"
+                or surface_change
+                or cane_guidance_present
+                or device_tactile_demand > 0
+            )
             * _attn_entry
         )
         memory_active_retrieval_th = MEMORY_ACTIVE_RETRIEVAL_TH
@@ -1707,12 +2000,21 @@ def run_simulation(familiarity_level=1):
             + 0.10 * float(_img_reference == "absent_long")
             + 0.20 * float(crossing_active)
             + 0.03 * float(prev_action == "stop_and_probe")
+            + 0.20
+            * clamp(
+                device_auditory_demand
+                + device_tactile_demand
+                + device_manual_demand,
+                low=0.0,
+                high=1.0,
+            )
             + ATTENTION_GATED_CENTRAL_DANGER_BOOST
             * float(
                 seev_gate_passed
                 and (
                     vehicle_approach
                     or cane_obstacle
+                    or device_safety_alert_active
                     or dominant_sound_type in {"horn", "reverse_beep"}
                 )
             ),
@@ -1742,6 +2044,9 @@ def run_simulation(familiarity_level=1):
             current_surface_type=current_surface_type,
             at_node=at_node,
             risk_signal=actr_risk_signal,
+            device_auditory_demand=device_auditory_demand,
+            device_tactile_demand=device_tactile_demand,
+            device_manual_demand=device_manual_demand,
         )
         actr_auditory_share, actr_tactile_share, actr_manual_share = pm_channel_shares
 
@@ -1942,7 +2247,10 @@ def run_simulation(familiarity_level=1):
             )
 
         risk_error_prob = clamp(
-            RISK_ERROR_BASE_PROB + RISK_ERROR_COEF * actr_risk_signal,
+            RISK_ERROR_BASE_PROB
+            + RISK_ERROR_COEF * actr_risk_signal
+            + 0.12 * device_auditory_demand
+            + 0.08 * device_tactile_demand,
             low=0.05,
             high=0.98,
         )
@@ -1953,7 +2261,10 @@ def run_simulation(familiarity_level=1):
         )
         actr_tactile_error = ACTR_ERROR_BOOST if tactile_error_flag else ACTR_ERROR_BASE
 
-        actr_manual_active = int(next_action in {"move_direct", "stop_and_probe"})
+        actr_manual_active = int(
+            next_action in {"move_direct", "stop_and_probe"}
+            or device_manual_demand > 0
+        )
         manual_error_flag = bool(central_decision_error)
         actr_manual_error = ACTR_ERROR_BOOST if manual_error_flag else ACTR_ERROR_BASE
 
@@ -2181,6 +2492,30 @@ def run_simulation(familiarity_level=1):
             "sound_salience": round(sound_salience, 4),
             "retrieval_wm_load": round(retrieval_wm_load, 4),
             "human_activity": human_activity,
+            "device_alert_active": int(device_alert_active),
+            "device_alert_source": "|".join(device_alert_sources) if device_alert_sources else "none",
+            "device_alert_modality": (
+                "mixed"
+                if sum(
+                    int(value > 0)
+                    for value in (
+                        device_auditory_demand,
+                        device_tactile_demand,
+                        device_manual_demand,
+                    )
+                ) > 1
+                else "auditory"
+                if device_auditory_demand > 0
+                else "tactile"
+                if device_tactile_demand > 0
+                else "manual"
+                if device_manual_demand > 0
+                else "none"
+            ),
+            "device_auditory_demand": round(device_auditory_demand, 4),
+            "device_tactile_demand": round(device_tactile_demand, 4),
+            "device_manual_demand": round(device_manual_demand, 4),
+            **device_step_state["fields"],
             "cane_hit": _dbn_cane_hit,
             "cane_hit_raw": cane_hit,
             "surface_change": surface_change,

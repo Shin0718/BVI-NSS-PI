@@ -28,7 +28,15 @@ os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR))
 MPL_CACHE_DIR.mkdir(exist_ok=True)
 
 BASE_CANE_OBSTACLE_PROB = 0.00179
-DEVICE_OBSTACLE_FIELDS = ("device_obstacle_detected", "device_obstacle_alert")
+BASE_CANE_CURB_PROB = 0.02731
+BASE_CANE_WALL_PROB = 0.00507
+BASE_CANE_RAILING_PROB = 0.00377
+BASE_VEHICLE_APPROACH_PROB = 0.00142
+BASE_VEHICLE_APPROACH_CROSSING_PROB = 0.00574
+BASE_HORN_PROB = 0.000167
+BASE_REVERSE_BEEP_PROB = 0.000251
+BASE_HUMAN_ACTIVITY_PROB = 0.01036
+BASE_CROSSING_HUMAN_ACTIVITY_PROB = 0.02402
 
 
 def _load_engine_cli():
@@ -47,6 +55,45 @@ def _load_engine_cli():
 
 ENGINE_CLI = None
 SIMULATION_LOCK = threading.Lock()
+
+
+_REPORTING_MODULE = None
+_REPORTING_MODULE_MTIME_NS = None
+
+def _load_reporting_module_exact():
+    """Load the reporting module from this project's engine directory.
+
+    Using an explicit file path avoids accidentally resolving a stale or unrelated
+    top-level module named ``reporting`` from ``sys.modules`` or another folder.
+    """
+    global _REPORTING_MODULE, _REPORTING_MODULE_MTIME_NS
+    reporting_path = ENGINE_DIR / "reporting.py"
+    mtime_ns = reporting_path.stat().st_mtime_ns
+    if (
+        _REPORTING_MODULE is not None
+        and _REPORTING_MODULE_MTIME_NS == mtime_ns
+        and hasattr(_REPORTING_MODULE, "write_scenario_summary_from_csv")
+    ):
+        return _REPORTING_MODULE
+
+    if str(ENGINE_DIR) not in sys.path:
+        sys.path.insert(0, str(ENGINE_DIR))
+    spec = importlib.util.spec_from_file_location(
+        "bvisas_reporting_runtime", reporting_path
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not load reporting module: {reporting_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    if not hasattr(module, "write_scenario_summary_from_csv"):
+        raise RuntimeError(
+            "The bundled BVI-SAS/reporting.py does not define "
+            "write_scenario_summary_from_csv. Replace the whole updated project "
+            "folder and restart the server."
+        )
+    _REPORTING_MODULE = module
+    _REPORTING_MODULE_MTIME_NS = mtime_ns
+    return module
 
 
 DEFAULT_FUNCTION_PARAMS = {
@@ -304,6 +351,33 @@ def _function_params(payload, function_key):
     return defaults
 
 
+def _runtime_device_config(payload):
+    """Build the in-simulation device configuration.
+
+    Only functions actually placed in ``route_template`` are included. The
+    simulation therefore writes ``null`` for every output field belonging to a
+    function that is not present, while active functions are evaluated against
+    the already-generated environmental events.
+    """
+    slots = _compile_route_template(payload) if _has_designer_slots(payload) else []
+    active_keys = sorted(
+        {
+            function_key
+            for slot in slots
+            for function_key in slot.get("functions", [])
+            if function_key in DEFAULT_FUNCTION_PARAMS
+        }
+    )
+    return {
+        "slots": slots,
+        "functions": {
+            function_key: _function_params(payload, function_key)
+            for function_key in active_keys
+        },
+        "device_trust": _device_trust_value(payload),
+    }
+
+
 def _extract_familiarity(payload):
     """Map the UI familiarity control to the model's binary familiarity input."""
     user_profile = payload.get("user_profile", {})
@@ -343,6 +417,7 @@ def _summarize_single_run(summary):
         "device_obstacle_alert_step_count": int(result.get("device_obstacle_alert_step_count", 0)),
         "map_image_url": _report_url(summary.get("map_image")),
         "actr_chart_url": _report_url(summary.get("actr_overview_chart_image")),
+        "scenario_summary_csv": summary.get("scenario_summary_csv"),
     }
 
 
@@ -390,6 +465,7 @@ def _summarize_monte_carlo(summary):
         "cognitive_load_std": float(aggregate.get("actr_iw_std", 0.0)),
         "map_image_url": map_image_url,
         "actr_chart_url": actr_chart_url,
+        "scenario_summary_csv": summary.get("scenario_summary_csv"),
     }
 
 
@@ -616,61 +692,6 @@ def _designer_obstacle_probability_parts(payload, obstacle_enabled):
     return cane_range_multiplier, other_obstacle_prob, total_obstacle_prob
 
 
-def _designer_obstacle_scopes(payload):
-    if not _has_designer_slots(payload):
-        return set()
-    scopes = set()
-    for slot in _compile_route_template(payload):
-        triggers = set(slot["triggers"])
-        if "obstacle" in slot["functions"] and ({"obstacle", "always_on"} & triggers):
-            scopes.add(slot["scope"])
-    return scopes
-
-
-def _csv_route_scope(row):
-    state = str(row.get("intersection_state", "")).strip().lower()
-    return "intersection" if state in {"intersection", "crossing"} else "segment"
-
-
-def _annotate_device_obstacle_rows(rows, fieldnames, payload):
-    """Record device obstacle recognition without changing baseline obstacle events."""
-    for field in DEVICE_OBSTACLE_FIELDS:
-        if field not in fieldnames:
-            fieldnames.append(field)
-
-    scopes = _designer_obstacle_scopes(payload)
-    params = _function_params(payload, "obstacle")
-    detection_prob = params.get("recognition_rate", 0.0)
-    detection_prob = _bounded_float(detection_prob, default=0.0, low=0.0, high=1.0)
-    miss_prob = params.get("miss_rate")
-    if miss_prob is None:
-        miss_prob = params.get("false_alarm_rate", 0.0)
-    miss_prob = _bounded_float(miss_prob, default=0.0, low=0.0, high=1.0)
-    seed = _bounded_int((payload.get("simulation") or {}).get("seed"), default=42, low=1, high=999999)
-
-    detected_count = 0
-    alert_count = 0
-    for row in rows:
-        active_scope = _csv_route_scope(row) in scopes
-        has_obstacle_event = _csv_truthy(row.get("obstacle", "0"))
-        detected = 0
-        alerted = 0
-        if active_scope and has_obstacle_event:
-            step = row.get("step", "")
-            rng = random.Random(f"{seed}:{step}:device_obstacle")
-            detected = int(rng.random() < detection_prob)
-            alerted = int(detected and rng.random() >= miss_prob)
-        row["device_obstacle_detected"] = detected
-        row["device_obstacle_alert"] = alerted
-        detected_count += detected
-        alert_count += alerted
-
-    return {
-        "device_obstacle_detected_step_count": detected_count,
-        "device_obstacle_alert_step_count": alert_count,
-    }
-
-
 def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_factor, tactile_factor, trust_gap):
     """Map new front-end route_template slots onto the existing BVI-SAS override layer."""
     if not _has_designer_slots(payload):
@@ -701,9 +722,11 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
     )
 
     obstacle_enabled = bool(obstacle_scopes)
-    cane_range_multiplier, other_obstacle_prob, total_obstacle_prob = _designer_obstacle_probability_parts(
-        payload, obstacle_enabled
-    )
+    # Device recognition is an observation process, not an environmental generator.
+    # Physical event probabilities therefore depend only on the scenario.
+    cane_range_multiplier = 1.0
+    other_obstacle_prob = 0.0
+    total_obstacle_prob = BASE_CANE_OBSTACLE_PROB
     terrain_enabled = 1.0 if terrain_scopes else 0.0
     vehicle_segment = _scope_factor(vehicle_scopes, "segment")
     vehicle_intersection = _scope_factor(vehicle_scopes, "intersection")
@@ -721,34 +744,32 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
 
     _set_override(overrides, "CANE_RANGE_MULTIPLIER", cane_range_multiplier)
     _set_override(overrides, "OTHER_OBSTACLE_PROB", other_obstacle_prob)
-    _set_override(overrides, "CANE_OBSTACLE_PROB", total_obstacle_prob)
-    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(terrain_enabled * tactile_factor * 0.35, curb_guidance))
-    _set_override(overrides, "CANE_WALL_PROB", 0.00507 * wall_guidance)
-    _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * railing_guidance)
-    _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", 0.00142 * vehicle_segment * _designer_recognition(payload, "vehicle") * traffic_factor)
-    _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", 0.00574 * vehicle_intersection * _designer_recognition(payload, "vehicle") * traffic_factor)
-    _set_override(overrides, "SOUND_HORN_PROB", 0.000167 * max(vehicle_segment, vehicle_intersection) * traffic_factor)
-    _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", 0.000251 * max(vehicle_segment, vehicle_intersection) * traffic_factor)
-    _set_override(overrides, "HUMAN_ACTIVITY_PROB", 0.01036 * pedestrian_segment * _designer_recognition(payload, "pedestrian") * crowd_factor)
-    _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", 0.02402 * pedestrian_intersection * _designer_recognition(payload, "pedestrian") * crowd_factor)
-    landmark_strength = max(landmark_guidance, other_strength)
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006 * landmark_strength)
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030 * landmark_strength)
+    _set_override(overrides, "CANE_OBSTACLE_PROB", BASE_CANE_OBSTACLE_PROB)
+    _set_override(overrides, "CANE_CURB_PROB", BASE_CANE_CURB_PROB * max(0.35, tactile_factor))
+    _set_override(overrides, "CANE_WALL_PROB", BASE_CANE_WALL_PROB)
+    _set_override(overrides, "CANE_RAILING_PROB", BASE_CANE_RAILING_PROB)
+    _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", BASE_VEHICLE_APPROACH_PROB * traffic_factor)
+    _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", BASE_VEHICLE_APPROACH_CROSSING_PROB * traffic_factor)
+    _set_override(overrides, "SOUND_HORN_PROB", BASE_HORN_PROB * traffic_factor)
+    _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", BASE_REVERSE_BEEP_PROB * traffic_factor)
+    _set_override(overrides, "HUMAN_ACTIVITY_PROB", BASE_HUMAN_ACTIVITY_PROB * crowd_factor)
+    _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", BASE_CROSSING_HUMAN_ACTIVITY_PROB * crowd_factor)
+    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006)
+    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030)
 
-    if terrain_enabled or tactile_guidance:
-        surface_distribution = {
-            "flat_road": max(0.05, 0.78 - 0.14 * tactile_factor - 0.10 * tactile_guidance),
-            "uneven_natural": 0.012 if terrain_enabled else 0.006,
-            "slope_surface": 0.014 if terrain_enabled else 0.010,
-            "height_drop": 0.010 if terrain_enabled else 0.006,
-            "tactile_guidance": max(0.0, 0.16 * tactile_factor + 0.18 * tactile_guidance),
-        }
-        total_surface = sum(surface_distribution.values()) or 1.0
-        _set_override(
-            overrides,
-            "SURFACE_PROBABILITY_DISTRIBUTION",
-            {key: value / total_surface for key, value in surface_distribution.items()},
-        )
+    surface_distribution = {
+        "flat_road": max(0.05, 0.86 - 0.18 * tactile_factor),
+        "uneven_natural": 0.006,
+        "slope_surface": 0.010,
+        "height_drop": 0.012,
+        "tactile_guidance": max(0.0, 0.12 * tactile_factor),
+    }
+    total_surface = sum(surface_distribution.values()) or 1.0
+    _set_override(
+        overrides,
+        "SURFACE_PROBABILITY_DISTRIBUTION",
+        {key: value / total_surface for key, value in surface_distribution.items()},
+    )
 
     total_channel = max(
         0.01,
@@ -824,21 +845,22 @@ def _derive_model_overrides(payload):
     )
     trust_gap = max(0.0, 1.0 - device_trust)
 
-    _set_override(overrides, "CANE_OBSTACLE_PROB", 0.00179 * obstacle_rate)
-    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(small_ground_rate, tactile_factor * 0.35))
-    _set_override(overrides, "CANE_WALL_PROB", 0.00507 * obstacle_rate)
-    _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * obstacle_rate)
-    _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", 0.00142 * vehicle_factor * traffic_factor)
-    _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", 0.00574 * vehicle_factor * crossing_factor * traffic_factor)
-    _set_override(overrides, "SOUND_HORN_PROB", 0.000167 * traffic_factor * vehicle_factor)
-    _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", 0.000251 * traffic_factor * vehicle_factor)
-    _set_override(overrides, "HUMAN_ACTIVITY_PROB", 0.01036 * crowd_factor)
-    _set_override(overrides, "CROSSING_HORN_PROB", 0.00313 * crossing_factor * traffic_factor)
-    _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", 0.02402 * crossing_factor * crowd_factor)
+    # Keep the physical environment fixed for a given scenario. Device settings
+    # affect detection/alerts and cognitive processing only.
+    _set_override(overrides, "CANE_OBSTACLE_PROB", BASE_CANE_OBSTACLE_PROB)
+    _set_override(overrides, "CANE_CURB_PROB", BASE_CANE_CURB_PROB * max(0.35, tactile_factor))
+    _set_override(overrides, "CANE_WALL_PROB", BASE_CANE_WALL_PROB)
+    _set_override(overrides, "CANE_RAILING_PROB", BASE_CANE_RAILING_PROB)
+    _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", BASE_VEHICLE_APPROACH_PROB * traffic_factor)
+    _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", BASE_VEHICLE_APPROACH_CROSSING_PROB * traffic_factor)
+    _set_override(overrides, "SOUND_HORN_PROB", BASE_HORN_PROB * traffic_factor)
+    _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", BASE_REVERSE_BEEP_PROB * traffic_factor)
+    _set_override(overrides, "HUMAN_ACTIVITY_PROB", BASE_HUMAN_ACTIVITY_PROB * crowd_factor)
+    _set_override(overrides, "CROSSING_HORN_PROB", 0.00313 * traffic_factor)
+    _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", BASE_CROSSING_HUMAN_ACTIVITY_PROB * crowd_factor)
 
-    landmark_strength = max(landmark_factor, text_factor * 0.8, entrance_factor * 0.9)
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006 * landmark_strength)
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030 * landmark_strength)
+    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006)
+    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030)
     _set_override(overrides, "LANDMARK_DECAY_RATE", {"Weak": 0.70, "Normal": 0.82, "Strong": 0.94}.get(duration.get("landmark_persistence"), 0.82))
 
     vibration = _find_named(modalities, "Vibration")
@@ -920,6 +942,10 @@ def _derive_model_overrides(payload):
         tactile_factor=tactile_factor,
         trust_gap=trust_gap,
     )
+    # The complete device chain is evaluated inside simulation.py, after the
+    # physical world state has been generated and before attention/workload are
+    # calculated. No recognition parameter is allowed to alter world events.
+    _set_override(overrides, "DESIGNER_DEVICE_CONFIG", _runtime_device_config(payload))
 
     loader = _build_environment_loader(simulation.get("start_point"), simulation.get("goal_point"))
     if loader is not None:
@@ -960,49 +986,79 @@ def _json_safe_parameters(parameters):
 
 
 def _save_ui_run_config(report_path, payload, applied_parameters, result):
-    """Persist the designer payload and output that produced a simulation report."""
+    """Persist the designer payload and output as JSON only."""
     report_path = Path(report_path)
     timestamp = report_path.stem.replace("sim_summary_", "")
     config_path = report_path.with_name(f"sim_ui_config_{timestamp}.json")
-    io_report_path = report_path.with_name(f"sim_io_report_{timestamp}.md")
     safe_applied_parameters = _json_safe_parameters(applied_parameters)
     config = {
         "summary_report": str(report_path),
-        "io_report": str(io_report_path),
         "received_config": payload,
         "applied_parameters": safe_applied_parameters,
         "output_preview": result,
     }
     with config_path.open("w", encoding="utf-8") as handle:
         json.dump(config, handle, ensure_ascii=False, indent=2)
-    with io_report_path.open("w", encoding="utf-8") as handle:
-        handle.write(f"# BVI-NSS UI Input/Output Report\n\n")
-        handle.write(f"- Summary report: `{report_path}`\n")
-        handle.write(f"- UI config JSON: `{config_path}`\n\n")
-        handle.write("## Output Preview\n\n")
-        for key, value in result.items():
-            handle.write(f"- `{key}`: {value}\n")
-        handle.write("\n## Received Frontend Config\n\n")
-        handle.write("```json\n")
-        handle.write(json.dumps(payload, ensure_ascii=False, indent=2))
-        handle.write("\n```\n\n")
-        handle.write("## Applied Legacy Parameter Overrides\n\n")
-        handle.write("```json\n")
-        handle.write(json.dumps(safe_applied_parameters, ensure_ascii=False, indent=2))
-        handle.write("\n```\n")
-    return config_path, io_report_path
+    return config_path
 
 
-def _annotate_report_with_ui_context(report_path, payload, summary):
-    """Record UI scenario context in summary JSON and per-step CSV output."""
-    report_path = Path(report_path)
+def _intervention_context(payload, *, run="", seed=""):
+    """Build compact metadata for scenario-level analysis rows.
+
+    The current designer UI always sends the legacy ``device.references``
+    defaults, even when no device function has been placed in the route
+    template. Therefore, when ``route_template`` is present, intervention
+    status is determined only by its active slots. Legacy references are used
+    only for older payloads that do not contain ``route_template`` at all.
+    """
+    route_template_provided = "route_template" in payload
+    compiled_slots = _compile_route_template(payload) if _has_designer_slots(payload) else []
+    has_designer_device = bool(compiled_slots)
+
+    references = (payload.get("device") or {}).get("references") or []
+    enabled_legacy_references = [
+        item
+        for item in references
+        if isinstance(item, dict) and _enabled_factor(item) > 0
+    ]
+    has_legacy_device = (not route_template_provided) and bool(enabled_legacy_references)
+    has_device = has_designer_device or has_legacy_device
+
+    function_names = []
+    if has_designer_device:
+        function_names = sorted(
+            {
+                function_key
+                for slot in compiled_slots
+                for function_key in slot.get("functions", [])
+            }
+        )
+    elif has_legacy_device:
+        function_names = [
+            str(item.get("name", "")).strip()
+            for item in enabled_legacy_references
+            if str(item.get("name", "")).strip()
+        ]
+
+    return {
+        "run": run,
+        "seed": seed,
+        "condition": "intervention" if has_device else "control",
+        "function_config": "+".join(function_names) if function_names else "baseline",
+        "model_variant": str((payload.get("simulation") or {}).get("model_variant", "full")),
+    }
+
+
+def _annotate_one_single_summary(summary_path, payload, summary, *, run="", seed=""):
+    """Annotate one run without changing any environmental event columns."""
+    reporting_module = _load_reporting_module_exact()
+
     scenario = payload.get("scenario") or {}
     scenario_context = {
         "traffic_density": scenario.get("traffic_density", ""),
         "crowd_density": scenario.get("crowd_density", ""),
         "tactile_paving": scenario.get("tactile_paving", ""),
     }
-
     summary["ui_scenario"] = scenario_context
 
     single_csv = summary.get("single_simulation_data_csv")
@@ -1013,21 +1069,84 @@ def _annotate_report_with_ui_context(report_path, payload, summary):
                 reader = csv.DictReader(handle)
                 rows = list(reader)
                 fieldnames = reader.fieldnames or []
-            device_obstacle_counts = _annotate_device_obstacle_rows(rows, fieldnames, payload)
-            summary.setdefault("result", {}).update(device_obstacle_counts)
-            if rows and {"traffic_density", "crowd_density"}.issubset(fieldnames):
-                for row in rows:
-                    row["traffic_density"] = scenario_context["traffic_density"]
-                    row["crowd_density"] = scenario_context["crowd_density"]
+            # Device detection and alert fields are already produced inside the
+            # simulation loop. Do not recalculate or append them after the run.
+            context = _intervention_context(payload, run=run, seed=seed)
             if rows:
+                for row in rows:
+                    if "run" in fieldnames:
+                        row["run"] = context["run"]
+                    if "seed" in fieldnames:
+                        row["seed"] = context["seed"]
+                    if "traffic_density" in fieldnames:
+                        row["traffic_density"] = scenario_context["traffic_density"]
+                    if "crowd_density" in fieldnames:
+                        row["crowd_density"] = scenario_context["crowd_density"]
                 with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
                     writer = csv.DictWriter(handle, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(rows)
 
+                scenario_summary_path = reporting_module.write_scenario_summary_from_csv(
+                    str(csv_path), context=context
+                )
+                summary["scenario_summary_csv"] = scenario_summary_path
+
+    with Path(summary_path).open("w", encoding="utf-8") as handle:
+        json.dump(summary, handle, ensure_ascii=False, indent=2)
+    return summary
+
+
+def _annotate_report_with_ui_context(report_path, payload, summary):
+    """Record UI context and generate concise single-run or MC analysis files."""
+    report_path = Path(report_path)
+    run_details = summary.get("run_details") or []
+
+    if not run_details:
+        return _annotate_one_single_summary(report_path, payload, summary)
+
+    combined_rows = []
+    combined_fieldnames = None
+    for detail in run_details:
+        summary_json = detail.get("summary_json")
+        if not summary_json:
+            continue
+        try:
+            with open(summary_json, "r", encoding="utf-8") as handle:
+                run_summary = json.load(handle)
+        except OSError:
+            continue
+        run_summary = _annotate_one_single_summary(
+            summary_json,
+            payload,
+            run_summary,
+            run=detail.get("run", ""),
+            seed=detail.get("seed", ""),
+        )
+        detail["scenario_summary_csv"] = run_summary.get("scenario_summary_csv", "")
+        detail["single_simulation_data_csv"] = run_summary.get(
+            "single_simulation_data_csv", ""
+        )
+        scenario_csv = run_summary.get("scenario_summary_csv")
+        if scenario_csv and Path(scenario_csv).exists():
+            with open(scenario_csv, "r", encoding="utf-8-sig", newline="") as handle:
+                reader = csv.DictReader(handle)
+                combined_fieldnames = combined_fieldnames or reader.fieldnames
+                combined_rows.extend(reader)
+
+    if combined_rows and combined_fieldnames:
+        stamp = str(summary.get("timestamp", "mc"))
+        combined_path = report_path.parent / f"scenario_summary_mc_{stamp}.csv"
+        with combined_path.open("w", encoding="utf-8-sig", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=combined_fieldnames)
+            writer.writeheader()
+            writer.writerows(combined_rows)
+        summary["scenario_summary_csv"] = str(combined_path)
+
+    summary["ui_scenario"] = payload.get("scenario") or {}
     with report_path.open("w", encoding="utf-8") as handle:
         json.dump(summary, handle, ensure_ascii=False, indent=2)
-
+    return summary
 
 def run_simulation_from_payload(payload):
     """Run the existing BVI-SAS engine with the new designer parameter mapping."""
@@ -1067,7 +1186,7 @@ def run_legacy_simulation_from_payload(payload):
                     _annotate_report_with_ui_context(summary_path, payload, summary)
                     result = _summarize_single_run(summary)
                     report_path = summary_path
-            config_path, io_report_path = _save_ui_run_config(
+            config_path = _save_ui_run_config(
                 report_path, payload, applied_parameters, result
             )
 
@@ -1076,7 +1195,6 @@ def run_legacy_simulation_from_payload(payload):
         "result": result,
         "report_path": str(report_path),
         "config_path": str(config_path),
-        "io_report_path": str(io_report_path),
         "applied_parameters": _json_safe_parameters(applied_parameters),
         "engine_log": log_buffer.getvalue()[-4000:],
         "received_config": payload,
@@ -1159,7 +1277,7 @@ class BviSasRequestHandler(SimpleHTTPRequestHandler):
 
 def main():
     """Start the local product prototype server."""
-    port = int(os.environ.get("BVI_SAS_PORT", "8765"))
+    port = int(os.environ.get("BVI_SAS_PORT", "8767"))
     server = ThreadingHTTPServer(("127.0.0.1", port), BviSasRequestHandler)
     print(f"BVI-NSS local site: http://127.0.0.1:{port}")
     print("Press Ctrl+C to stop the server.")
