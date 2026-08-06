@@ -722,11 +722,9 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
     )
 
     obstacle_enabled = bool(obstacle_scopes)
-    # Device recognition is an observation process, not an environmental generator.
-    # Physical event probabilities therefore depend only on the scenario.
-    cane_range_multiplier = 1.0
-    other_obstacle_prob = 0.0
-    total_obstacle_prob = BASE_CANE_OBSTACLE_PROB
+    cane_range_multiplier, other_obstacle_prob, total_obstacle_prob = _designer_obstacle_probability_parts(
+        payload, obstacle_enabled
+    )
     terrain_enabled = 1.0 if terrain_scopes else 0.0
     vehicle_segment = _scope_factor(vehicle_scopes, "segment")
     vehicle_intersection = _scope_factor(vehicle_scopes, "intersection")
@@ -744,32 +742,35 @@ def _apply_designer_slot_overrides(overrides, payload, *, traffic_factor, crowd_
 
     _set_override(overrides, "CANE_RANGE_MULTIPLIER", cane_range_multiplier)
     _set_override(overrides, "OTHER_OBSTACLE_PROB", other_obstacle_prob)
-    _set_override(overrides, "CANE_OBSTACLE_PROB", BASE_CANE_OBSTACLE_PROB)
-    _set_override(overrides, "CANE_CURB_PROB", BASE_CANE_CURB_PROB * max(0.35, tactile_factor))
-    _set_override(overrides, "CANE_WALL_PROB", BASE_CANE_WALL_PROB)
-    _set_override(overrides, "CANE_RAILING_PROB", BASE_CANE_RAILING_PROB)
-    _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", BASE_VEHICLE_APPROACH_PROB * traffic_factor)
-    _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", BASE_VEHICLE_APPROACH_CROSSING_PROB * traffic_factor)
-    _set_override(overrides, "SOUND_HORN_PROB", BASE_HORN_PROB * traffic_factor)
-    _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", BASE_REVERSE_BEEP_PROB * traffic_factor)
-    _set_override(overrides, "HUMAN_ACTIVITY_PROB", BASE_HUMAN_ACTIVITY_PROB * crowd_factor)
-    _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", BASE_CROSSING_HUMAN_ACTIVITY_PROB * crowd_factor)
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006)
-    _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030)
+    _set_override(overrides, "CANE_OBSTACLE_PROB", total_obstacle_prob)
+    _set_override(overrides, "CANE_CURB_PROB", 0.02731 * max(terrain_enabled * tactile_factor * 0.35, curb_guidance))
+    _set_override(overrides, "CANE_WALL_PROB", 0.00507 * wall_guidance)
+    _set_override(overrides, "CANE_RAILING_PROB", 0.00377 * railing_guidance)
+    _set_override(overrides, "SOUND_VEHICLE_APPROACH_PROB", 0.00142 * vehicle_segment * _designer_recognition(payload, "vehicle") * traffic_factor)
+    _set_override(overrides, "SOUND_VEHICLE_APPROACH_CROSSING_PROB", 0.00574 * vehicle_intersection * _designer_recognition(payload, "vehicle") * traffic_factor)
+    _set_override(overrides, "SOUND_HORN_PROB", 0.000167 * max(vehicle_segment, vehicle_intersection) * traffic_factor)
+    _set_override(overrides, "SOUND_REVERSE_BEEP_PROB", 0.000251 * max(vehicle_segment, vehicle_intersection) * traffic_factor)
+    _set_override(overrides, "HUMAN_ACTIVITY_PROB", 0.01036 * pedestrian_segment * _designer_recognition(payload, "pedestrian") * crowd_factor)
+    _set_override(overrides, "CROSSING_HUMAN_ACTIVITY_PROB", 0.02402 * pedestrian_intersection * _designer_recognition(payload, "pedestrian") * crowd_factor)
+    if landmark_guidance > 0.0 or other_strength > 0.0:
+        landmark_strength = max(landmark_guidance, other_strength)
+        _set_override(overrides, "LANDMARK_TRIGGER_PROB_MIN", 0.006 * landmark_strength)
+        _set_override(overrides, "LANDMARK_TRIGGER_PROB_MAX", 0.030 * landmark_strength)
 
-    surface_distribution = {
-        "flat_road": max(0.05, 0.86 - 0.18 * tactile_factor),
-        "uneven_natural": 0.006,
-        "slope_surface": 0.010,
-        "height_drop": 0.012,
-        "tactile_guidance": max(0.0, 0.12 * tactile_factor),
-    }
-    total_surface = sum(surface_distribution.values()) or 1.0
-    _set_override(
-        overrides,
-        "SURFACE_PROBABILITY_DISTRIBUTION",
-        {key: value / total_surface for key, value in surface_distribution.items()},
-    )
+    if terrain_enabled or tactile_guidance:
+        surface_distribution = {
+            "flat_road": max(0.05, 0.78 - 0.14 * tactile_factor - 0.10 * tactile_guidance),
+            "uneven_natural": 0.012 if terrain_enabled else 0.006,
+            "slope_surface": 0.014 if terrain_enabled else 0.010,
+            "height_drop": 0.010 if terrain_enabled else 0.006,
+            "tactile_guidance": max(0.0, 0.16 * tactile_factor + 0.18 * tactile_guidance),
+        }
+        total_surface = sum(surface_distribution.values()) or 1.0
+        _set_override(
+            overrides,
+            "SURFACE_PROBABILITY_DISTRIBUTION",
+            {key: value / total_surface for key, value in surface_distribution.items()},
+        )
 
     total_channel = max(
         0.01,
